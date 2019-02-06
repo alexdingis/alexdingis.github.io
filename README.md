@@ -1,1 +1,1 @@
-# alexdingis-github.io
+# alexdingis.github.io
