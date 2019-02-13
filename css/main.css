@@ -45,3 +45,8 @@ ul.posts li {
     list-style: none;
 }
 
+span.skills {
+    display:table;
+    margin-left: auto;
+    margin-right: auto;
+}
