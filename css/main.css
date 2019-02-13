@@ -45,9 +45,9 @@ ul.posts li {
     list-style: none;
 }
 
-span.skills {
-    display:table;
+div.skills {
     margin-left: auto;
     margin-right: auto;
+    text-align:center;
     font-size: 1em;
 }
