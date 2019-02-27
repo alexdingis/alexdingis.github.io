@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+	<style type="text/css">
+		#map {
+			width: 960px;
+			height: 500px;
+			}
+	</style>
+</head>
+<body>
+	<div id="map"></div>
+	<script>
+
+		let red_icon_url = "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png";
+
+		var red_icon = L.icon({
+			iconUrl: red_icon_url,
+			iconSize:     [20, 30]
+		});
+
+		let jump_bike = "https://dc.jumpmobility.com/opendata/free_bike_status.json";
+		let list_of_bikes = [];
+
+		var myStyle = {
+    		"color": "#FF0000",
+    		"weight": 5,
+    		"opacity": 0.65
+		};
+
+
+		fetch(jump_bike)
+		.then(res => res.json())
+		.then((out) => {
+			bikes = out.data.bikes;
+			for(var key in bikes) {
+				var latlng = L.latLng({ lat: bikes[key].lat, lng: bikes[key].lon,  });
+				L.marker( latlng, {icon: red_icon}).addTo(map).bindPopup(bikes[key].jump_ebike_battery_level);
+			};
+			alert("Jump Bikes Available: " + bikes.length)
+		})
+		.catch(err => {throw err});
+
+	    var map = L.map("map",{
+		    center: [38.907192, -77.036873],
+		    zoom: 11
+	    });
+
+	    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+			attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+		}).addTo(map);
+
+		function click_map(){
+			map.on( "click", function(e){
+				var coord = e.latlng;
+				var lat = coord.lat;
+				var lon = coord.lng;
+				alert("You clicked the map at: " + lat + ", " + lon)
+			});
+		};
+
+		//click_map();
+
+</script>
+</body>
+</html>
