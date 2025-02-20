@@ -25,7 +25,7 @@
     .map-controls {
         position: absolute;
         top: 1rem; /* Responsive top margin */
-        left: 1rem;
+        right: 1rem;
         background: rgba(255, 255, 255, 0.85);
         padding: 0.5rem;
         border-radius: 0.5rem;
@@ -33,6 +33,7 @@
         display: flex;
         gap: 0.5rem;
         max-width: 250px; /* Prevents it from stretching too much */
+        z-index: 1000; /* Ensures buttons appear above the map */
     }
 
     /* Ensure buttons are responsive */
