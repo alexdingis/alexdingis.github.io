@@ -127,7 +127,31 @@
         xAxis: { categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May'] },
         yAxis: { title: { text: 'Values' } },
         series: [{ name: 'Sample', data: [29, 71, 106, 129, 144] }]
-    });
+    });    
+</script>
+
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyAMrxhDHuKjwUXT1OC0d34H2GppaQVtXHA",
+    authDomain: "ltdb-2010-3b97c.firebaseapp.com",
+    projectId: "ltdb-2010-3b97c",
+    storageBucket: "ltdb-2010-3b97c.firebasestorage.app",
+    messagingSenderId: "501604031389",
+    appId: "1:501604031389:web:582a7d7850a54446afad74",
+    measurementId: "G-L5S86XR6CZ"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
 </script>
 
 </body>
