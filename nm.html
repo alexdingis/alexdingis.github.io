@@ -63,6 +63,35 @@
                 width: 100%;
             }
         }
+
+        .tooltip {
+            position: relative;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 180px;
+            background-color: black;
+            color: #fff;
+            text-align: center;
+            padding: 5px;
+            border-radius: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -93,7 +122,12 @@
                 <p>The Longitudinal Tract Web Map (LTWM) is an interactive web map that lets users explore neighborhood change from 1970 to 2020 by clicking on areas to visualize historical trends and patterns. The LTWM is a full-stack 		project that I built to simplify neighborhood change analysis by eliminating the need to download and process data, allowing anyone—from researchers to the public—to instantly access, visualize, and interact with historical trends through an intuitive point-and-click interface. The LTWM uses Firebase for data storage and API access, GitHub Pages to host the interactive web interface, Leaflet to deploy the web map, Mapbox vector 		tiles to visualize neighborhoods across the United States, and High Charts to visualize the trends.</p>
                 <p>The Longitudinal Tract Web Map (LTWM) draws on data from the <a href="https://s4.ad.brown.edu/projects/diversity/researcher/bridging.htm" target="_blank">Longitudinal Tract Database</a> (LTDB), developed by Dr. John R. 		Logan, Dr. Zengwang Xu, and Dr. Brian Stults, which harmonized U.S. Decennial Census data from 1970 to 2020 to consistent 2010 census tract boundaries. The LTWM uses 1970–2000 data from the LTDB and employs IPUMS NHGIS crosswalks to align this data, along with 2010 Census data, to 2020 census tract boundaries, while incorporating 2020 Decennial Census data in its original form.</p>
                 <p>This web map helps you answer the question: "<b>How have the demographics of my neighborhood changed since 1970?</b>"</p>
-                <p>The inspiration for this LTWM is the <a href="https://www.huduser.gov/apps/public/usps/mappingtool" target="_blank">Neighborhood Change Web Map</a> (NCWM), a product that I manage as part of my day job as a Social Science Analyst for the Department of Housing and Urban Development. You can read more about the NCWM on the inspiration tab.</p>
+                <p>The inspiration for this LTWM is the 
+                    <a href="https://www.huduser.gov/apps/public/usps/mappingtool" target="_blank" class="tooltip">
+                        Neighborhood Change Web Map <span class="tooltip-text">LTWM and NCWM, see what I did there?</span>
+                    </a> 
+                    (NCWM), a product that I manage as part of my day job as a Social Science Analyst for the Department of Housing and Urban Development. You can read more about the NCWM on the inspiration tab.
+                </p>
                 <h3>How to Use</h3>
                 <p>Select one or more census tracts then click Get Data. The graph below the map will populate with trends about the selected neighborhoods. You can then use the dropdown above the graph to view different trends about the 		selected neighborhoods.</p>
     
