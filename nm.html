@@ -103,7 +103,6 @@
                         <!-- Responsive Floating Controls -->
                         <div class="map-controls d-flex flex-wrap">
                             <button id="getDataBtn" class="btn btn-primary w-100 w-md-auto btn-sm">Get Data</button>
-                            <button id="queryAll" class="btn btn-primary w-100 w-md-auto btn-sm">Query All</button>
                             <button id="clearDataBtn" class="btn btn-danger w-100 w-md-auto btn-sm">Clear Data</button>
                         </div>
                     </div>
@@ -116,9 +115,13 @@
                             <label for="chartDropdown" class="form-label">Select Chart Type</label>
                             <select id="chartDropdown" class="form-select">
                                 <option value="age">Age (Count)</option>
+                                <option value="ageRate">Age (Rate)</option>
                                 <option value="race">Population Race/Ethnicity (Count)</option>
+                                <option value="raceRate">Population Race/Ethnicity (Rate)</option>
                                 <option value="housingOccupancy">Housing Occupancy (Count)</option>
+                                <option value="housingOccupancyRate">Housing Occupancy (Rate)</option>
                                 <option value="housingTenure">Housing Tenure (Count)</option>
+                                <option value="housingTenureRate">Housing Tenure (Rate)</option>
                             </select>
                         </div>
                     
@@ -170,6 +173,10 @@
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+<!--Arquero Dataframe Library-->
+<script src="https://unpkg.com/arquero"></script>
+
+
 <script type="module">
     // Import Firestore functions from the correct path
     import { getFirestore, collection, query, where, doc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
@@ -194,53 +201,8 @@
     let data = [];
 
     // grpbyData is the array that will be used to populate the High Charts
-    let grpbyData = [];
-
-    // Function to query all documents from a Firestore collection and check if the collection exists
-    async function getAllDocumentsWithSubCollection() {
-    const collectionRef = collection(db, "mt-pleasant-tracts");
-
-    try {
-        // Get all documents from the mt-pleasant-tracts collection
-        const querySnapshot = await getDocs(collectionRef);
-
-        if (querySnapshot.empty) {
-            console.log("No documents found in the collection.");
-        } else {
-            // Iterate over each document in the collection
-            querySnapshot.forEach(async (doc) => {
-                console.log("Document ID:", doc.id);
-
-                // Reference to the sub-collection within the document
-                const subCollectionRef = collection(doc.ref, "years");
-
-                // Get all documents from the sub-collection "years"
-                const subCollectionSnapshot = await getDocs(subCollectionRef);
-
-                if (subCollectionSnapshot.empty) {
-                    console.log(`No sub-documents found in the 'years' collection for document ${doc.id}`);
-                } else {
-                    subCollectionSnapshot.forEach(subDoc => {
-                        // console.log(`Sub-collection Year ID: ${subDoc.id} =>`, subDoc.data());
-                        data.push({ documentId: doc.id, year: subDoc.id, data: subDoc.data() });
-                    });
-                    updateChartVisibility();
-                }
-            });
-        }
-    } catch (error) {
-        console.error("Error connecting to Firestore collection:", error);
-    }
-    console.log("data array:", data)
-}
-
-
-
-    // Attach event listener to the "Query All" button
-    // document.getElementById("queryAll").addEventListener("click", getAllDocuments);
-    document.getElementById("queryAll").addEventListener("click", getAllDocumentsWithSubCollection);
-
-    
+    let grpbyYearData = [];
+   
 
     // Function to update Highcharts visibility based on data length
     function updateChartVisibility() {
@@ -278,138 +240,164 @@
 
     // Firestore query for selected tracts
     async function getTractData(tracts) {
-        clearData();
+        // 1. Clear existing data
+        data = [];
+
         for (let tract of tracts) {
             try {
-                // 1. Get the document by TRACT20 (Document ID)
+                // 2. Get the document by TRACT20 (GEOID)
                 const tractRef = doc(db, "mt-pleasant-tracts", tract);
                 const tractDoc = await getDoc(tractRef);
 
                 if (!tractDoc.exists()) {
-                    console.log(`No document found for TRACT20: ${tract}`);
-                    continue;
+                    console.error(`Error: No document found for GEOID ${tract}`);
+                    continue; // Skip to the next tract
                 }
 
-                // 2. Get sub-collections (years) from the TRACT20 document
+                // 3. Get sub-collections (years) from the TRACT20 document
                 const yearsCollectionRef = collection(tractRef, "years");
                 const yearSubCollections = await getDocs(yearsCollectionRef);
 
                 if (yearSubCollections.empty) {
-                    console.log(`No year data found for TRACT20: ${tract}`);
+                    console.warn(`Warning: No year data found for GEOID ${tract}`);
                     continue;
                 }
 
-                // Process each sub-collection (year)
-                clearData();
+                // 4. Process and flatten each sub-collection (year)
                 yearSubCollections.forEach(subDoc => {
-                    console.log(`Year: ${subDoc.id}, Data:`, subDoc.data());
-                    // Store data or handle it as needed
-                    data.push({ documentId: tract, year: subDoc.id, data: subDoc.data() });
+                    let row = {
+                        TRACT20: tract,  // GEOID as first column
+                        YEAR: subDoc.id, // Year as second column
+                        ...subDoc.data() // Spread remaining columns
+                    };
+                    data.push(row);
                 });
+
             } catch (error) {
-                console.error("Error retrieving data for TRACT20", tract, error);
+                console.error(`Error retrieving data for GEOID ${tract}:`, error);
             }
         }
-        // Perform groupby action data array
-        const summedData = getSumByYear(data);
-        populateHighChart(summedData);
-        console.log(summedData);
-
         // Update the chart visibility
         updateChartVisibility(); // Update chart visibility after data retrieval
+        
+        // Group the data for display in the chart by year
+        grpbyYearData = groupByYear(data);
+        console.log("Group-by data:", grpbyYearData); // Log final structured data
     }
 
-    function getSumByYear(dataArray) {
-        // Clear grpbyData first
-        grpbyData = [];
-        const sumsByYear = {};
+    // Group the data in the Arquero dataframe by year
+    function groupByYear(dataArray) {
+        if (!dataArray.length) {
+            console.warn("Warning: No data available for grouping.");
+            return [];
+        }
 
-        // Iterate over the data array
-        dataArray.forEach(item => {
-            const year = item.year; // Get the year for this item
-            const data = item.data; // Get the data object
+        // Convert raw data into an Arquero table
+        let df = aq.from(dataArray);
 
-            // If the year doesn't exist in sumsByYear, initialize it
-            if (!sumsByYear[year]) {
-                sumsByYear[year] = {};
-            }
+        // Group by YEAR and sum numerical columns
+        let grouped = df
+            .groupby("YEAR")
+            .rollup(
+                Object.fromEntries(
+                    Object.keys(dataArray[0]).filter(key => key !== "TRACT20" && key !== "YEAR")
+                    .map(key => [key, aq.op.sum(key)])
+                )
+            ) // Rollup finishes here
+            .derive({
+                X_A18UND_PCT: d => d.X_POP !== 0 ? Math.round((d.X_A18UND / d.X_POP) * 100 * 10) / 10 : null,
+                X_ADULT_PCT:  d => d.X_POP !== 0 ? Math.round((d.X_ADULT / d.X_POP) * 100 * 10) / 10 : null,
+                X_A60UP_PCT:  d => d.X_POP !== 0 ? Math.round((d.X_A60UP / d.X_POP) * 100 * 10) / 10 : null,
+                X_ASN_PCT:    d => d.X_POP !== 0 ? Math.round((d.X_ASN / d.X_POP) * 100 * 10) / 10 : null,
+                X_HISP_PCT:   d => d.X_POP !== 0 ? Math.round((d.X_HISP / d.X_POP) * 100 * 10) / 10 : null,
+                X_NHBLK_PCT:  d => d.X_POP !== 0 ? Math.round((d.X_NHBLK / d.X_POP) * 100 * 10) / 10 : null,
+                X_NHWHT_PCT:  d => d.X_POP !== 0 ? Math.round((d.X_NHWHT / d.X_POP) * 100 * 10) / 10 : null,
+                X_NTV_PCT:    d => d.X_POP !== 0 ? Math.round((d.X_NTV / d.X_POP) * 100 * 10) / 10 : null,
+                X_OTH_PCT:    d => d.X_POP !== 0 ? Math.round((d.X_OTH / d.X_POP) * 100 * 10) / 10 : null,
+                X_OWN_PCT:    d => d.X_OHU !== 0 ? Math.round((d.X_OWN / d.X_OHU) * 100 * 10) / 10 : null,
+                X_RENT_PCT:   d => d.X_OHU !== 0 ? Math.round((d.X_RENT / d.X_OHU) * 100 * 10) / 10 : null,
+                X_OHU_PCT:    d => d.X_HU  !== 0 ? Math.round((d.X_OHU / d.X_HU) * 100 * 10) / 10 : null,
+                X_VAC_PCT:    d => d.X_HU  !== 0 ? Math.round((d.X_VAC / d.X_HU) * 100 * 10) / 10 : null
+            }); // Now derive works on the grouped table
 
-            // Iterate over each key-value pair in the data object
-            for (const key in data) {
-                // If the key doesn't exist in the year, initialize it
-                if (!sumsByYear[year][key]) {
-                    sumsByYear[year][key] = 0;
-                }
-                
-                // Add the value to the sum for this key in the current year
-                sumsByYear[year][key] += data[key];
-            }
-        });
-
-        return sumsByYear;
+        let groupedData = grouped.objects();
+        return groupedData;
     }
+
+
+    
 
     // Test creating a stacked bar chart for age categories
-    function populateHighChart(sd) {
-    // Use the groupedData directly here
-    const years = ['1970', '1980', '1990', '2000', '2010', '2020'];
+    function updateHighChart(selectedGroup) {
+        if (!grpbyYearData.length) {
+            console.warn("Warning: No grouped data available for chart.");
+            return;
+        }
 
-    // Extract data for X_A18UND, X_ADULT, X_A60UP from summedData
-    const a18undData = years.map(year => sd[year]?.X_A18UND || 0);
-    const adultData = years.map(year => sd[year]?.X_ADULT || 0);
-    const a60upData = years.map(year => sd[year]?.X_A60UP || 0);
+        // Extract years
+        const years = grpbyYearData.map(d => d.YEAR);
 
-    // Initialize the Highcharts chart
-    Highcharts.chart('chart', {
-        chart: {
-            type: 'column' // Set chart type to 'column' for vertical bars
-        },
-        title: {
-            text: 'Population Distribution by Age Groups'
-        },
-        xAxis: {
-            categories: years, // X-axis categories are the years
-            title: {
-                text: 'Year'
+        // Define dataset mappings based on selection
+        let seriesData = {
+            age: [
+                { name: fieldLabels.X_A18UND, data: grpbyYearData.map(d => d.X_A18UND || 0), stack: "age" },
+                { name: fieldLabels.X_ADULT, data: grpbyYearData.map(d => d.X_ADULT || 0), stack: "age" },
+                { name: fieldLabels.X_A60UP, data: grpbyYearData.map(d => d.X_A60UP || 0), stack: "age" }
+            ],
+            ageRate: [
+                { name: fieldLabels.X_A18UND_PCT, data: grpbyYearData.map(d => d.X_A18UND_PCT || 0), stack: "ageRate" },
+                { name: fieldLabels.X_ADULT_PCT, data: grpbyYearData.map(d => d.X_ADULT_PCT || 0), stack: "ageRate" },
+                { name: fieldLabels.X_A60UP_PCT, data: grpbyYearData.map(d => d.X_A60UP_PCT || 0), stack: "ageRate" }
+            ],
+            housingOccupancy: [
+                { name: fieldLabels.X_OHU, data: grpbyYearData.map(d => d.X_OHU || 0), stack: "housingOccupancy" },
+                { name: fieldLabels.X_VAC, data: grpbyYearData.map(d => d.X_VAC || 0), stack: "housingOccupancy" }
+            ],
+            housingOccupancyRate: [
+                { name: fieldLabels.X_OHU_PCT, data: grpbyYearData.map(d => d.X_OHU_PCT || 0), stack: "housingOccupancyRate" },
+                { name: fieldLabels.X_VAC_PCT, data: grpbyYearData.map(d => d.X_VAC_PCT || 0), stack: "housingOccupancyRate" }
+            ],
+            housingTenure: [
+                { name: fieldLabels.X_OWN, data: grpbyYearData.map(d => d.X_OWN || 0), stack: "housingTenure" },
+                { name: fieldLabels.X_RENT, data: grpbyYearData.map(d => d.X_RENT || 0), stack: "housingTenure" }
+            ],
+            housingTenureRate: [
+                { name: fieldLabels.X_OWN_PCT, data: grpbyYearData.map(d => d.X_OWN_PCT || 0), stack: "housingTenureRate" },
+                { name: fieldLabels.X_RENT_PCT, data: grpbyYearData.map(d => d.X_RENT_PCT || 0), stack: "housingTenureRate" }
+            ]
+        };
+
+
+        // Render the Highcharts chart
+        Highcharts.chart("chart", {
+            chart: { type: "column" },
+            title: { text: "Population Distribution" },
+            xAxis: { categories: years, title: { text: "Year" } },
+            yAxis: { min: 0, title: { text: selectedGroup.includes("Rate") ? "Percentage" : "Count" } },
+            plotOptions: { column: { stacking: "normal" } },
+            series: seriesData[selectedGroup] || []
+        });
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        let dropdown = document.getElementById("chartDropdown");
+
+        if (dropdown) {
+            dropdown.addEventListener("change", function () {
+                updateHighChart(this.value);
+            });
+
+            // ✅ Only initialize chart if there's data
+            if (grpbyYearData.length > 0) {
+                updateHighChart("age");
+            } else {
+                console.warn("Chart not initialized: grpbyYearData is empty.");
             }
-        },
-        yAxis: {
-            min: 0,
-            title: {
-                text: 'Population Count'
-            },
-            stackLabels: {
-                enabled: true,
-                style: {
-                    fontWeight: 'bold',
-                    color: 'gray'
-                }
-            }
-        },
-        plotOptions: {
-            column: {
-                stacking: 'normal' // Enable stacking for the column chart
-            }
-        },
-        series: [ {
-            name: 'X_ADULT',
-            data: adultData,
-            stack: 'age'
-        }, {
-            name: 'X_A60UP',
-            data: a60upData,
-            stack: 'age'
-        }, {
-            name: 'X_A18UND',
-            data: a18undData,
-            stack: 'age'
-        }]
+        }
     });
-}
 
 
-
- 
 
     // Attach event listeners
     document.getElementById("getDataBtn").addEventListener("click", addData);
@@ -422,14 +410,38 @@
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Initialize Highcharts (ensure it's after visibility logic)
-    Highcharts.chart("chart", {
-        chart: { type: "line" },
-        title: { text: "Sample Data" },
-        xAxis: { categories: ["January", "February", "March", "April", "May", "June"] },
-        yAxis: { title: { text: "Values" } },
-        series: [{ name: "Sample", data: [29, 71, 106, 129, 144, 89] }]
-    });
+    
+    // Field name mapping
+    const fieldLabels = {
+        X_A18UND: "Under 18",
+        X_A18UND_PCT: "Under 18 (Rate)",
+        X_A60UP:      "60+",
+        X_A60UP_PCT:  "60+ (Rate)",
+        X_ADULT:      "Adults",
+        X_ADULT_PCT:  "Adults (Rate)",
+        X_ASN:        "Asian",
+        X_ASN_PCT:    "Asian (Rate)",
+        X_HISP:       "Hispanic",
+        X_HISP_PCT:   "Hispanic (Rate)",
+        X_NHBLK:      "Black (Non-Hispanic)",
+        X_NHBLK_PCT:  "Black (Non-Hispanic) (Rate)",
+        X_NHWHT:      "White (Non-Hispanic)",
+        X_NHWHT_PCT:  "White (Non-Hispanic) (Rate)",
+        X_NTV:        "Native American",
+        X_NTV_PCT:    "Native American (Rate)",
+        X_OTH:        "Other",
+        X_OTH_PCT:    "Other (Rate)",
+        X_OHU:        "Occupied Housing Units",
+        X_OHU_PCT:    "Occupied (Rate)",
+        X_VAC:        "Vacant",
+        X_VAC_PCT:    "Vacant (Rate)",
+        X_OWN:        "Owner-Occupied",
+        X_OWN_PCT:    "Owner-Occupied (Rate)",
+        X_RENT:       "Renter-Occupied",
+        X_RENT_PCT:   "Renter-Occupied (Rate)"
+    };
+
+
 </script>
 
 </body>
