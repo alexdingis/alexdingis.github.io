@@ -123,12 +123,45 @@
                 <p>The Longitudinal Tract Web Map (LTWM) draws on data from the <a href="https://s4.ad.brown.edu/projects/diversity/researcher/bridging.htm" target="_blank">Longitudinal Tract Database</a> (LTDB), developed by Dr. John R. 		Logan, Dr. Zengwang Xu, and Dr. Brian Stults, which harmonized U.S. Decennial Census data from 1970 to 2020 to consistent 2010 census tract boundaries. The LTWM uses 1970–2000 data from the LTDB and employs IPUMS NHGIS crosswalks to align this data, along with 2010 Census data, to 2020 census tract boundaries, while incorporating 2020 Decennial Census data in its original form.</p>
                 <p>This web map helps you answer the question: "<b>How have the demographics of my neighborhood changed since 1970?</b>"</p>
                 <p>The inspiration for the LTWM is the 
-                    <a href="https://www.huduser.gov/apps/public/usps/mappingtool" target="_blank" class="tooltip">
-                        Neighborhood Change Web Map <span class="tooltip-text">LTWM and NCWM, see what I did there?</span>
-                    </a> 
-                    (NCWM), a product that I created and manage as part of my day job as a Social Science Analyst for the Department of Housing and Urban Development. You can read more about the NCWM on the inspiration tab.
-                </p>
-                <h3>How to Use</h3>
+    <a href="https://www.huduser.gov/apps/public/usps/mappingtool" target="_blank">Neighborhood Change Web Map</a> 
+    <span class="tooltip">(NCWM)
+        <span class="tooltip-text">LTWM and NCWM, see what I did there?</span>
+    </span>, a product that I created and manage as part of my day job as a Social Science Analyst for the Department of Housing and Urban Development. You can read more about the NCWM on the inspiration tab.
+</p>
+
+<style>
+.tooltip {
+    position: relative;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.tooltip .tooltip-text {
+    visibility: hidden;
+    width: 180px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    padding: 5px;
+    border-radius: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+</style>
+
+                <h3>How to Use the LTWM</h3>
                 <p>Select one or more census tracts then click Get Data. The graph below the map will populate with trends about the selected neighborhoods. You can then use the dropdown above the graph to view different trends about the 		selected neighborhoods.</p>
     
                 <div id="data-container" style="position: relative;">
