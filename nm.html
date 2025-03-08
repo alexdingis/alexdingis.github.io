@@ -98,6 +98,38 @@
             padding-bottom: 5vh; /* Ensures spacing at the bottom */
         }
 
+        /* General label styling */
+        .tract-label {
+            font-size: clamp(10px, 1.2vw, 16px); /* Responsive font size */
+            font-weight: bold;
+            color: #3388ff; /* Matches blue outline */
+            background: none !important; /* Ensures no background */
+            border: none !important; /* No border */
+            padding: 0 !important; /* Removes excess spacing */
+            text-align: center;
+            pointer-events: none; /* Prevents interfering with clicks */
+            white-space: nowrap; /* Prevents text from breaking into multiple lines */
+            text-shadow: 0px 0px 3px white, 0px 0px 3px white; /* White glow effect for contrast */
+        }
+
+        /* Override Leaflet tooltip container to ensure no unwanted background */
+        .leaflet-tooltip {
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+
+
+        /* Adjustments for smaller screens */
+        @media (max-width: 600px) {
+            .tract-label {
+                font-size: clamp(10px, 2.5vw, 14px); /* Slightly larger on small screens */
+            }
+        }
+
+
+
     </style>
 </head>
 <body>
@@ -132,6 +164,12 @@
                  <h3>How to Use the LTWM</h3>
                 <p>Select one or more census tracts then click Get Data. The graph below the map will populate with trends about the selected neighborhoods. You can then use the dropdown above the graph to view different trends about the selected neighborhoods.</p>
                 <p style="color: #ce2029">Nationwide demographic data for census tracts is available, but at this stage, only Washington, DC has mapped polygons as I build this project.</p>
+                <!-- Toggle Switch for Data Display -->
+                <div class="form-check form-switch mt-3 mb-4">
+                    <input class="form-check-input" type="checkbox" id="label-toggle" checked>
+                    <label class="form-check-label" for="label-toggle">Census Tract Labels</label>
+                </div>
+                <!--Map stuff down here-->
                 <div id="data-container" style="position: relative;">
                     <div id="map-container" style="position: relative;">
                         <div id="map" style="width: 100%; height: 500px;"></div>
@@ -220,6 +258,7 @@
 
     // Firebase configuration
     const firebaseConfig = {
+        // Hello and thank you for checking out my API key
         apiKey: "AIzaSyB28a8taXxO9610Rc1Ai1bq_bYMIzgOleM",
         authDomain: "ltwm-2020.firebaseapp.com",
         projectId: "ltwm-2020",
@@ -236,10 +275,19 @@
     // 🌎 Global Variables
     let data = []; // Stores selected tracts
     let geojsonLayer; // Global GeoJSON layer reference
-
+    const mapStartZoom = 12; // Starting zoom level
+    const minLabelZoom = mapStartZoom + 2; // Labels appear only at zoom 14+
     // Demo DC census tracts GeoJSON
     const geojsonURL = "https://raw.githubusercontent.com/alexdingis/alexdingis.github.io/master/DC_2020_CT.geojson";  
 
+
+    // Ensure that label-toggle switch is turned on at load
+    // Ensure the switch is ON when the page loads
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("label-toggle").checked = true;
+    });
+
+    
     // grpbyData is the array that will be used to populate the High Charts
     let grpbyYearData = [];
    
@@ -450,7 +498,11 @@
             chart: { type: "column" },
             title: { text: "Population Distribution" },
             xAxis: { categories: years, title: { text: "Year" } },
-            yAxis: { min: 0, title: { text: selectedGroup.includes("Rate") ? "Percentage" : "Count" } },
+            yAxis: {
+                min: 0,
+                max: selectedGroup.includes("Rate") ? 100 : null, // 👈 Limits y-axis to 100 for rate-based metrics
+                title: { text: selectedGroup.includes("Rate") ? "Percentage" : "Count" }
+            },
             plotOptions: { column: { stacking: "normal" } },
             series: seriesData[selectedGroup] || []
         });
@@ -521,55 +573,98 @@
 
     // You mean I should add it where this comment block is?
 
-    // 📌 Fetch and Display GeoJSON
-    fetch(geojsonURL)
-        .then(response => response.json())
-        .then(jsonData => {
-            geojsonLayer = L.geoJSON(jsonData, {
-                style: {
-                    color: "#3388ff", // Default border color
-                    weight: 2,        // Adjust line thickness
-                    fillOpacity: 0.0  // Transparent fill
+    // Fetch and Display GeoJSON
+
+    // Function to load and update GeoJSON
+    function loadGeoJSON() {
+        fetch(geojsonURL)
+            .then(response => response.json())
+            .then(jsonData => {
+                if (geojsonLayer) {
+                    map.removeLayer(geojsonLayer);
                 }
-            }).addTo(map);
 
-            // 📌 Click event to toggle selection
-            geojsonLayer.eachLayer(layer => {
-                layer.on('click', function () {
-                    let tractValue = layer.feature.properties.TRACT20;
-
-                    if (!Array.isArray(data)) {
-                        data = []; // Ensure it's an array
-                    }
-
-                    let index = data.findIndex(d => d.TRACT20 === tractValue);
-
-                    if (index === -1) {
-                        // 🟢 Add to selection
-                        data.push({ TRACT20: tractValue });
-                        layer.setStyle({
-                            color: "#008080", // Teal outline
-                            weight: 3,
-                            fillColor: "#008080",
-                            fillOpacity: 0.4
-                        });
-                    } else {
-                        // 🔴 Remove from selection
-                        data.splice(index, 1);
-                        layer.setStyle({
-                            color: "#3388ff", // Restore default border
+                geojsonLayer = L.geoJSON(jsonData, {
+                    style: function () {
+                        return {
+                            color: "#3388ff", // Default border color
                             weight: 2,
-                            fillOpacity: 0.0
+                            fillOpacity: 0.0  // Transparent fill
+                        };
+                    },
+                    onEachFeature: function (feature, layer) {
+                        let tractValue = feature.properties.TRACT20;
+                        let toggleSwitch = document.getElementById("label-toggle");
+
+                        // If toggle is ON and zoom is 14+, display the last 6 characters as a label
+                        function updateLabel() {
+                            if (toggleSwitch.checked && map.getZoom() >= minLabelZoom) {
+                                let tractID = tractValue.slice(-6);
+                                layer.bindTooltip(tractID, { 
+                                    permanent: true, 
+                                    direction: "center", 
+                                    className: "tract-label"
+                                });
+                            } else {
+                                layer.unbindTooltip(); // Remove label when zoomed out
+                            }
+                        }
+
+                        // Run initially to set the label state
+                        updateLabel();
+
+                        // Listen for zoom events and update labels
+                        map.on("zoomend", updateLabel);
+
+                        // 📌 Click event to toggle selection
+                        layer.on("click", function () {
+                            let index = data.findIndex(d => d.TRACT20 === tractValue);
+
+                            if (index === -1) {
+                                // 🟢 Add to selection
+                                data.push({ TRACT20: tractValue });
+                                layer.setStyle({
+                                    color: "#008080", // Teal outline
+                                    weight: 3,
+                                    fillColor: "#008080",
+                                    fillOpacity: 0.4
+                                });
+                            } else {
+                                // 🔴 Remove from selection
+                                data.splice(index, 1);
+                                layer.setStyle({
+                                    color: "#3388ff", // Restore default border
+                                    weight: 2,
+                                    fillOpacity: 0.0
+                                });
+                            }
+
+                            console.log("✅ Updated selected tracts:", data.map(d => d.TRACT20));
                         });
                     }
+                }).addTo(map);
+            })
+            .catch(error => console.error("Error loading GeoJSON:", error));
+    }
 
-                    console.log("✅ Updated selected tracts:", data.map(d => d.TRACT20));
+        // 🔹 Function to update labels when the toggle changes
+        document.getElementById("label-toggle").addEventListener("change", function () {
+            if (geojsonLayer) {
+                geojsonLayer.eachLayer(layer => {
+                    if (layer.getTooltip()) {
+                        layer.unbindTooltip(); // Remove label
+                    }
+                    if (this.checked) {
+                        let tractID = layer.feature.properties.TRACT20.slice(-6);
+                        layer.bindTooltip(tractID, { 
+                            permanent: true, 
+                            direction: "center", 
+                            className: "tract-label"
+                        });
+                    }
                 });
-            });
-        })
-        .catch(error => console.error("Error loading GeoJSON:", error));
-
-
+            }
+        });
 
 
     
@@ -603,7 +698,7 @@
         X_RENT_PCT:   "Renter-Occupied (Rate)"
     };
 
-
+    loadGeoJSON();
 </script>
 
 </body>
