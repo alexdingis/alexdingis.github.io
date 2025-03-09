@@ -728,10 +728,8 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Leaflet Geocoder
-        // Add a geocoder search box
         // Load the geocoder after the map has loaded
-        document.addEventListener("DOMContentLoaded", function () {
+        map.whenReady(() => {
             const geocoder = L.Control.geocoder({
                 defaultMarkGeocode: false,
                 geocoder: L.Control.Geocoder.nominatim()
