@@ -1,16 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Longitudinal Neighborhood Web Map</title>
-    
+    <title>Longitudinal Tract Web Map</title>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!--Arquero Dataframe Library-->
+    <script src="https://unpkg.com/arquero"></script>
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Leaflet CSS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
     <!-- Highcharts -->
     <script src="https://code.highcharts.com/highcharts.js"></script>
 
@@ -69,7 +79,7 @@
             text-decoration: none;
             cursor: pointer;
         }
-        
+
         .tooltip .tooltip-text {
             visibility: hidden;
             width: 180px;
@@ -87,7 +97,7 @@
             transition: opacity 0.3s;
             font-size: 12px;
         }
-        
+
         .tooltip:hover .tooltip-text {
             visibility: visible;
             opacity: 1;
@@ -95,21 +105,30 @@
 
 
         body {
-            padding-bottom: 5vh; /* Ensures spacing at the bottom */
+            padding-bottom: 5vh;
+            /* Ensures spacing at the bottom */
         }
 
         /* General label styling */
         .tract-label {
-            font-size: clamp(10px, 1.2vw, 16px); /* Responsive font size */
+            font-size: clamp(10px, 1.2vw, 16px);
+            /* Responsive font size */
             font-weight: bold;
-            color: #3388ff; /* Matches blue outline */
-            background: none !important; /* Ensures no background */
-            border: none !important; /* No border */
-            padding: 0 !important; /* Removes excess spacing */
+            color: #3388ff;
+            /* Matches blue outline */
+            background: none !important;
+            /* Ensures no background */
+            border: none !important;
+            /* No border */
+            padding: 0 !important;
+            /* Removes excess spacing */
             text-align: center;
-            pointer-events: none; /* Prevents interfering with clicks */
-            white-space: nowrap; /* Prevents text from breaking into multiple lines */
-            text-shadow: 0px 0px 3px white, 0px 0px 3px white; /* White glow effect for contrast */
+            pointer-events: none;
+            /* Prevents interfering with clicks */
+            white-space: nowrap;
+            /* Prevents text from breaking into multiple lines */
+            text-shadow: 0px 0px 3px white, 0px 0px 3px white;
+            /* White glow effect for contrast */
         }
 
         /* Override Leaflet tooltip container to ensure no unwanted background */
@@ -124,19 +143,35 @@
         /* Adjustments for smaller screens */
         @media (max-width: 600px) {
             .tract-label {
-                font-size: clamp(10px, 2.5vw, 14px); /* Slightly larger on small screens */
+                font-size: clamp(10px, 2.5vw, 14px);
+                /* Slightly larger on small screens */
             }
         }
 
+        /*Search Button*/
+        .btn-dark-green {
+            background-color: #1e8543;
+            /* Dark, rich green */
+            color: white;
+            /* Ensures text is readable */
+            border-color: #0f5c2f;
+            /* Slightly darker border for depth */
+        }
 
-
+        .btn-dark-green:hover {
+            background-color: #0f5c2f;
+            /* Even darker green on hover */
+            border-color: #0d4a26;
+            color: white;
+        }
     </style>
 </head>
+
 <body>
 
     <div class="container mt-4">
         <h1>Longitudinal Tract Web Map</h1>
-    
+
         <!-- Navigation Tabs -->
         <ul class="nav nav-tabs" id="myTabs" role="tablist">
             <li class="nav-item">
@@ -146,24 +181,46 @@
                 <a class="nav-link" id="about-tab" data-bs-toggle="tab" href="#about" role="tab">About</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="inspiration-tab" data-bs-toggle="tab" href="#inspiration" role="tab">Inspiration</a>
+                <a class="nav-link" id="inspiration-tab" data-bs-toggle="tab" href="#inspiration"
+                    role="tab">Inspiration</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="literature-tab" data-bs-toggle="tab" href="#literature" role="tab">Literature</a>
+                <a class="nav-link" id="literature-tab" data-bs-toggle="tab" href="#literature"
+                    role="tab">Literature</a>
             </li>
         </ul>
-    
+
         <!-- Tab Content -->
         <div class="tab-content mt-3">
             <div class="tab-pane fade show active" id="welcome" role="tabpanel">
                 <h3>Welcome to the Longitudinal Tract Web Map</h3>
-                <p>The Longitudinal Tract Web Map (LTWM) is an interactive web map that lets users explore neighborhood change from 1970 to 2020 by clicking on areas to visualize historical trends and patterns. The LTWM is a full-stack 		project that I built to simplify neighborhood change analysis by eliminating the need to download and process data, allowing anyone—from researchers to the public—to instantly access, visualize, and interact with historical trends through an intuitive point-and-click interface. The LTWM uses Firebase for data storage and API access, GitHub Pages to host the interactive web interface, Leaflet to deploy the web map, Mapbox vector 		tiles to visualize neighborhoods across the United States, and High Charts to visualize the trends.</p>
-                <p>The Longitudinal Tract Web Map (LTWM) draws on data from the <a href="https://s4.ad.brown.edu/projects/diversity/researcher/bridging.htm" target="_blank">Longitudinal Tract Database</a> (LTDB), developed by Dr. John R. 		Logan, Dr. Zengwang Xu, and Dr. Brian Stults, which harmonized U.S. Decennial Census data from 1970 to 2020 to consistent 2010 census tract boundaries. The LTWM uses 1970–2000 data from the LTDB and employs IPUMS NHGIS crosswalks to align this data, along with 2010 Census data, to 2020 census tract boundaries, while incorporating 2020 Decennial Census data in its original form.</p>
-                <p>This web map helps you answer the question: "<b>How have the demographics of my neighborhood changed since 1970?</b>"</p>
-                <p>The inspiration for the LTWM is the <a href="https://www.huduser.gov/apps/public/usps/mappingtool" target="_blank">Neighborhood Change Web Map</a> (NCWM), a product that I created and manage as part of my day job as a Social Science Analyst for the Department of Housing and Urban Development. You can read more about the NCWM on the Inspiration Tab.</p>
-                 <h3>How to Use the LTWM</h3>
-                <p>Select one or more census tracts then click Get Data. The graph below the map will populate with trends about the selected neighborhoods. You can then use the dropdown above the graph to view different trends about the selected neighborhoods.</p>
-                <p style="color: #ce2029">Nationwide demographic data for census tracts is available, but at this stage, only Washington, DC has mapped polygons as I build this project.</p>
+                <p>The Longitudinal Tract Web Map (LTWM) is an interactive web map that lets users explore neighborhood
+                    change from 1970 to 2020 by clicking on areas to visualize historical trends and patterns. The LTWM
+                    is a full-stack project that I built to simplify neighborhood change analysis by eliminating the
+                    need to download and process data, allowing anyone—from researchers to the public—to instantly
+                    access, visualize, and interact with historical trends through an intuitive point-and-click
+                    interface. The LTWM uses Firebase for data storage and API access, GitHub Pages to host the
+                    interactive web interface, Leaflet to deploy the web map, Mapbox vector tiles to visualize
+                    neighborhoods across the United States, and High Charts to visualize the trends.</p>
+                <p>The Longitudinal Tract Web Map (LTWM) draws on data from the <a
+                        href="https://s4.ad.brown.edu/projects/diversity/researcher/bridging.htm"
+                        target="_blank">Longitudinal Tract Database</a> (LTDB), developed by Dr. John R. Logan, Dr.
+                    Zengwang Xu, and Dr. Brian Stults, which harmonized U.S. Decennial Census data from 1970 to 2020 to
+                    consistent 2010 census tract boundaries. The LTWM uses 1970–2000 data from the LTDB and employs
+                    IPUMS NHGIS crosswalks to align this data, along with 2010 Census data, to 2020 census tract
+                    boundaries, while incorporating 2020 Decennial Census data in its original form.</p>
+                <p>This web map helps you answer the question: "<b>How have the demographics of my neighborhood changed
+                        since 1970?</b>"</p>
+                <p>The inspiration for the LTWM is the <a href="https://www.huduser.gov/apps/public/usps/mappingtool"
+                        target="_blank">Neighborhood Change Web Map</a> (NCWM), a product that I created and manage as
+                    part of my day job as a Social Science Analyst for the Department of Housing and Urban Development.
+                    You can read more about the NCWM on the Inspiration Tab.</p>
+                <h3>How to Use the LTWM</h3>
+                <p>Select one or more census tracts then click Get Data. The graph below the map will populate with
+                    trends about the selected neighborhoods. You can then use the dropdown above the graph to view
+                    different trends about the selected neighborhoods.</p>
+                <p style="color: #ce2029">Nationwide demographic data for census tracts is available, but at this stage,
+                    only Washington, DC has mapped polygons as I build this project.</p>
                 <!-- Toggle Switch for Data Display -->
                 <div class="form-check form-switch mt-3 mb-4">
                     <input class="form-check-input" type="checkbox" id="label-toggle" checked>
@@ -173,20 +230,24 @@
                 <div id="data-container" style="position: relative;">
                     <div id="map-container" style="position: relative;">
                         <div id="map" style="width: 100%; height: 500px;"></div>
-    
+
                         <!-- Responsive Floating Controls -->
                         <div class="map-controls d-flex flex-wrap">
+                            <div class="input-group mb-2">
+                                <input id="addressSearch" type="text" class="form-control" placeholder="Address" />
+                                <button id="searchBtn" class="btn btn-dark-green">Search</button>
+                            </div>
                             <button id="getDataBtn" class="btn btn-primary w-100 w-md-auto btn-sm">Get Data</button>
                             <button id="clearDataBtn" class="btn btn-danger w-100 w-md-auto btn-sm">Clear Data</button>
                         </div>
                     </div>
-    
+
                     <!-- Chart and Dropdown for selecting chart type -->
                     <div class="container mt-4" id="info-container" style="display: none;">
-                    
+
                         <!-- Dropdown for selecting the chart type -->
                         <div class="mb-3">
-                            <label for="chartDropdown" class="form-label">Select Chart Type</label>
+                            <label for="chartDropdown" class="form-label">Select Data for Stacked Bar Chart</label>
                             <select id="chartDropdown" class="form-select">
                                 <option value="age">Age (Count)</option>
                                 <option value="ageRate">Age (Rate)</option>
@@ -198,457 +259,579 @@
                                 <option value="housingTenureRate">Housing Tenure (Rate)</option>
                             </select>
                         </div>
-                    
+                        <div class="mb-3">
+                            <label for="secondaryDropdown" class="form-label">Select Secondary Data</label>
+                            <select id="secondaryDropdown" class="form-select">
+                                <option value="">Choose Secondary Y-Axis Data</option>
+                                <optgroup label="Age">
+                                    <option value="X_A60UP">Senior (60+) (Count)</option>
+                                    <option value="X_A60UP_PCT">Senior (60+) (Rate)</option>
+                                    <option value="X_ADULT">Adult (18-60) (Count)</option>
+                                    <option value="X_ADULT_PCT">Adult (18-60) (Rate)</option>
+                                    <option value="X_A18UND">Children (&lt;18) (Count)</option>
+                                    <option value="X_A18UND_PCT">Children (&lt;18) (Rate)</option>
+                                </optgroup>
+                                <optgroup label="Population Race/Ethnicity">
+                                    <option value="X_NHBLK">Black (Count)</option>
+                                    <option value="X_NHBLK_PCT">Black (Rate)</option>
+                                    <option value="X_ASN">Asian (Count)</option>
+                                    <option value="X_ASN_PCT">Asian (Rate)</option>
+                                    <option value="X_HISP">Hispanic (Count)</option>
+                                    <option value="X_HISP_PCT">Hispanic (Rate)</option>
+                                    <option value="X_NTV">Native American (Count)</option>
+                                    <option value="X_NTV_PCT">Native American (Rate)</option>
+                                    <option value="X_OTH">Other (Count)</option>
+                                    <option value="X_OTH_PCT">Other (Rate)</option>
+                                </optgroup>
+                                <optgroup label="Housing Occupancy">
+                                    <option value="X_OHU">Occupied (Count)</option>
+                                    <option value="X_OHU_PCT">Occupied (Rate)</option>
+                                    <option value="X_VAC">Vacant (Count)</option>
+                                    <option value="X_VAC_PCT">Vacant (Rate)</option>
+                                </optgroup>
+
+                                <optgroup label="Housing Tenure">
+                                    <option value="X_OWN">Owner-Occupied (Count)</option>
+                                    <option value="X_OWN_PCT">Owner-Occupied (Rate)</option>
+                                    <option value="X_RENT">Renter-Occupied (Count)</option>
+                                    <option value="X_RENT_PCT">Renter-Occupied (Rate)</option>
+                                </optgroup>
+
+                            </select>
+                        </div>
+
                         <!-- Container for the chart -->
                         <div id="chart-container">
                             <!-- The chart will be placed here -->
                             <div id="chart" class="mt-3"></div>
                         </div>
                     </div>
-                    
+
                 </div>
             </div>
-            
+
             <div class="tab-pane fade" id="about" role="tabpanel">
                 <h3>Summary</h3>
-                <p>The Longitudinal Tract Web Map (LTWM) is an interactive tool designed to enhance the Longitudinal Tract Database (LTDB). It provides researchers and policymakers with an easy-to-use platform for analyzing neighborhood changes over time.</p>
+                <p>The Longitudinal Tract Web Map (LTWM) is an interactive tool designed to enhance the Longitudinal
+                    Tract Database (LTDB). It provides researchers and policymakers with an easy-to-use platform for
+                    analyzing neighborhood changes over time.</p>
                 <h3>Project Development</h3>
-                <p>I began working on this tool one month before the birth of my first child. I had little previous web development experience. I knew I'd need to implement project management, divide the project into chunks, and work on what I could when I could in order to complete this project.</p>
+                <p>I began working on this tool one month before the birth of my first child. I had little previous web
+                    development experience. I knew I'd need to implement project management, divide the project into
+                    chunks, and work on what I could when I could in order to complete this project.</p>
                 <h4>Purpose</h4>
-                <p>At the start of this project, I defined success as creating a web page with an interactive map. The goal was for users to click on a census tract and instantly see a graph illustrating changes in population and housing characteristics from 1970 to 2020.</p>
+                <p>At the start of this project, I defined success as creating a web page with an interactive map. The
+                    goal was for users to click on a census tract and instantly see a graph illustrating changes in
+                    population and housing characteristics from 1970 to 2020.</p>
                 <h4>Project Scoping</h4>
-                <p>The first step of this project was to define the project scope and research tools that could help me deploy this web page. There are <i>many</i> tools to build a webpage. Because this is my first webpage, I chose to stick with simple tools such as GitHub pages to host the page, Leaflet to deploy the web map, and Firebase to host my data.</p>
+                <p>The first step of this project was to define the project scope and research tools that could help me
+                    deploy this web page. There are <i>many</i> tools to build a webpage. Because this is my first
+                    webpage, I chose to stick with simple tools such as GitHub pages to host the page, Leaflet to deploy
+                    the web map, and Firebase to host my data.</p>
                 <h4>Dataset Construction</h4>
-                <p>The second step of this project was to compile and organize the LTDB into a dataset that I could host online then query. The LTDB is a census tract (neighborhood) harmonized dataset of decennial census data between 1970 and 2010. The harmonization is important because not only do census tract boundaries change over time, the United States did not have full coverage of census tracts until 2000. Although the LTDB was available in 2010 census tract, I was building this web page in early 2025. I decided to use the <a href="https://www.nhgis.org/geographic-crosswalks" target="_blank">IPUMS-NHGIS Geographic Crosswalks</a> to bring forward the LTDB into 2020 census tracts. There are some risks here such as loss of data accuracy, however, I felt the tradeoff was worth it because I could later link to more recent data and after the 2030 decennial census then be more likely to crosswalk that data to 2020 census tract boundaries so there is a bit of future-proofing.</p>
+                <p>The second step of this project was to compile and organize the LTDB into a dataset that I could host
+                    online then query. The LTDB is a census tract (neighborhood) harmonized dataset of decennial census
+                    data between 1970 and 2010. The harmonization is important because not only do census tract
+                    boundaries change over time, the United States did not have full coverage of census tracts until
+                    2000. Although the LTDB was available in 2010 census tract, I was building this web page in early
+                    2025. I decided to use the <a href="https://www.nhgis.org/geographic-crosswalks"
+                        target="_blank">IPUMS-NHGIS Geographic Crosswalks</a> to bring forward the LTDB into 2020 census
+                    tracts. There are some risks here such as loss of data accuracy, however, I felt the tradeoff was
+                    worth it because I could later link to more recent data and after the 2030 decennial census then be
+                    more likely to crosswalk that data to 2020 census tract boundaries so there is a bit of
+                    future-proofing.</p>
                 <h4>Wireframe Web Page</h4>
                 <h4>Database Development</h4>
                 <h4>Deploy Web Map</h4>
                 <h4>Challenges and Lessons Learned</h4>
                 <h4>Future Development</h4>
             </div>
-    
+
             <div class="tab-pane fade" id="inspiration" role="tabpanel">
                 <h3>Inspiration</h3>
-                <p>The inspiration for the Longitudinal Tract Web Map comes from the Neighborhood Change Web Map (NCWM), a project that I managed by a Social Science Analyst at HUD. You can read more about the NCWM <a href="https://web.archive.org/web/20250131225035/https://www.huduser.gov/portal/pdredge/pdr-edge-spotlight-article-061124.html" target = "_blank">here</a>. The purpose of the NCWM was to reimagine the many large, administrative datasets available into a point-and-click tool to generate insights and analysis far faster than the previous methods of compiling and analyzing the data.</p>
-                <p>I am the subject matter expert for the HUD-USPS Address Data. Since 2005, HUD has collected snapshots of. These data are <a href = "https://scholar.google.com/scholar?hl=en&as_sdt=0%2C9&authuser=1&q=usps+vacancy+data&btnG="target="_blank">widely used in housing vacancy research</a>, however, they're underutilized in other research such as measuring housing supply <i>growth</i>. While many researchers used this data, they had to download and compile the data to generate insights. This was out of reach for many practitioners and other stakeholders who either did not have bandwidth or technical capacity to do so. To overcome this challenge, I envisioned a point-and-click webmap that queries longitudinal administrative data then displays it in a concise way to uncover trends.</p>
+                <p>The inspiration for the Longitudinal Tract Web Map comes from the Neighborhood Change Web Map (NCWM),
+                    a project that I managed by a Social Science Analyst at HUD. You can read more about the NCWM <a
+                        href="https://web.archive.org/web/20250131225035/https://www.huduser.gov/portal/pdredge/pdr-edge-spotlight-article-061124.html"
+                        target="_blank">here</a>. The purpose of the NCWM was to reimagine the many large,
+                    administrative datasets available into a point-and-click tool to generate insights and analysis far
+                    faster than the previous methods of compiling and analyzing the data.</p>
+                <p>I am the subject matter expert for the HUD-USPS Address Data. Since 2005, HUD has collected snapshots
+                    of. These data are <a
+                        href="https://scholar.google.com/scholar?hl=en&as_sdt=0%2C9&authuser=1&q=usps+vacancy+data&btnG="
+                        target="_blank">widely used in housing vacancy research</a>, however, they're underutilized in
+                    other research such as measuring housing supply <i>growth</i>. While many researchers used this
+                    data, they had to download and compile the data to generate insights. This was out of reach for many
+                    practitioners and other stakeholders who either did not have bandwidth or technical capacity to do
+                    so. To overcome this challenge, I envisioned a point-and-click webmap that queries longitudinal
+                    administrative data then displays it in a concise way to uncover trends.</p>
                 <p>To</p>
             </div>
-    
+
             <div class="tab-pane fade" id="literature" role="tabpanel">
                 <h3>Literature</h3>
-                <p>Mason, Steven, Jonathan Schroeder, David Van Riper, Katherine Knowles, Tracy Kugler, Finn Roberts, and Steven Ruggles. IPUMS National Historical Geographic Information System: Version 19.0 <a href="https://www.nhgis.org/geographic-crosswalks" target="_blank">Geographic Crosswalks</a>. Minneapolis, MN: IPUMS. 2024. http://doi.org/10.18128/D050.V19.0.</p>
+                <p>Mason, Steven, Jonathan Schroeder, David Van Riper, Katherine Knowles, Tracy Kugler, Finn Roberts,
+                    and Steven Ruggles. IPUMS National Historical Geographic Information System: Version 19.0 <a
+                        href="https://www.nhgis.org/geographic-crosswalks" target="_blank">Geographic Crosswalks</a>.
+                    Minneapolis, MN: IPUMS. 2024. http://doi.org/10.18128/D050.V19.0.</p>
             </div>
         </div>
     </div>
 
-<!-- Bootstrap JS Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!--Arquero Dataframe Library-->
-<script src="https://unpkg.com/arquero"></script>
 
 
-<script type="module">
-    // Import Firestore functions from the correct path
-    import { getFirestore, collection, query, where, doc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"; 
 
-    // Firebase configuration
-    const firebaseConfig = {
-        // Hello and thank you for checking out my API key
-        apiKey: "AIzaSyB28a8taXxO9610Rc1Ai1bq_bYMIzgOleM",
-        authDomain: "ltwm-2020.firebaseapp.com",
-        projectId: "ltwm-2020",
-        storageBucket: "ltwm-2020.firebasestorage.app",
-        messagingSenderId: "263324499890",
-        appId: "1:263324499890:web:0b4eeabbe48e07f2376eab",
-        measurementId: "G-MVQXMGVRQ3"
-    };
+    <script type="module">
+        // Import Firestore functions from the correct path
+        import { getFirestore, collection, query, where, doc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);  // Initialize Firestore
-
-    // 🌎 Global Variables
-    let data = []; // Stores selected tracts
-    let geojsonLayer; // Global GeoJSON layer reference
-    const mapStartZoom = 12; // Starting zoom level
-    const minLabelZoom = mapStartZoom + 2; // Labels appear only at zoom 14+
-    // Demo DC census tracts GeoJSON
-    // const geojsonURL = "https://raw.githubusercontent.com/alexdingis/alexdingis.github.io/master/DC_2020_CT.geojson";
-    const geojsonURL = "https://raw.githubusercontent.com/alexdingis/alexdingis.github.io/master/census_tracts.geojson";
-
-
-    // Ensure that label-toggle switch is turned on at load
-    // Ensure the switch is ON when the page loads
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById("label-toggle").checked = true;
-    });
-
-    
-    // grpbyData is the array that will be used to populate the High Charts
-    let grpbyYearData = [];
-   
-
-    // Function to update Highcharts visibility based on data length
-    function updateChartVisibility() {
-        const chartDiv = document.getElementById("info-container");
-        if (data.length > 0) {
-            chartDiv.style.display = "block"; // Show chart
-        } else {
-            chartDiv.style.display = "none"; // Hide chart
-        }
-    }
-
-    // Function to clear data
-    function clearData() {
-        // Preserve selected tracts
-        let selectedTracts = data.map(d => d.TRACT20);
-        data = data.filter(d => selectedTracts.includes(d.TRACT20)); // Reset data
-        updateChartVisibility(); // Update chart visibility
-    }
-
-    // Add data from user input
-    function addData() {
-        let userInput = prompt("Enter TRACT20 values as a comma-separated list, each enclosed in single quotes:\nExample: '11001002702', '11001002703', '11001002704'");
-        
-        if (!userInput) {
-            alert("No input provided. Please enter at least one TRACT20 value.");
-            return;
-        }
-
-        // Convert input to an array
-        let tractArray = userInput.split(/,\s*/).map(item => item.replace(/'/g, ""));
-        console.log('here is the tractArray', tractArray)
-        
-        // If all checks pass, call Firestore API
-        getTractData(tractArray);
-    }
-
-
-    // Firestore query for selected tracts
-    async function getTractData(tracts) {
-        // 1. Clear existing data
-
-        for (let tract of tracts) {
-            try {
-                // 2. Get the document by TRACT20 (GEOID)
-                const tractRef = doc(db, "tracts_2020", tract);
-                const tractDoc = await getDoc(tractRef);
-
-                if (!tractDoc.exists()) {
-                    console.error(`Error: No document found for GEOID ${tract}`);
-                    continue; // Skip to the next tract
-                }
-
-                // 3. Get sub-collections (years) from the TRACT20 document
-                const yearsCollectionRef = collection(tractRef, "years");
-                const yearSubCollections = await getDocs(yearsCollectionRef);
-
-                if (yearSubCollections.empty) {
-                    console.warn(`Warning: No year data found for GEOID ${tract}`);
-                    continue;
-                }
-
-                // 4. Process and flatten each sub-collection (year)
-                yearSubCollections.forEach(subDoc => {
-                    let row = {
-                        TRACT20: tract,  // GEOID as first column
-                        YEAR: subDoc.id, // Year as second column
-                        ...subDoc.data() // Spread remaining columns
-                    };
-                    data.push(row);
-                });
-
-            } catch (error) {
-                console.error(`Error retrieving data for GEOID ${tract}:`, error);
-            }
-        }
-        // Update the chart visibility
-        updateChartVisibility(); // Update chart visibility after data retrieval
-        
-        // Group the data for display in the chart by year
-        grpbyYearData = groupByYear(data);
-        console.log("Group-by data:", grpbyYearData); // Log final structured data
-        updateHighChart(document.getElementById("chartDropdown").value);
-    }
-
-    // Group the data in the Arquero dataframe by year
-    function groupByYear(dataArray) {
-    if (!dataArray.length) {
-        console.warn("Warning: No data available for grouping.");
-        return [];
-    }
-
-    // 🔍 Log actual column names for debugging
-    console.log("🔍 Column names in dataArray:", Object.keys(dataArray[0]));
-
-    // 🔹 Ensure all rows have required columns
-    const expectedColumns = ["TRACT20", "YEAR", "X_A18UND", "X_A60UP", "X_ADULT", "X_POP"];
-    dataArray = dataArray.filter(row =>
-        expectedColumns.every(col => col in row)
-    );
-
-    if (!dataArray.length) {
-        console.error("❌ No valid data rows remaining after filtering. Check Firestore schema.");
-        return [];
-    }
-
-    // 📌 Convert to Arquero table
-    let df = aq.from(dataArray);
-
-    // 🏗 Group and roll up numerical columns
-    let grouped = df
-        .groupby("YEAR")
-        .rollup(
-            Object.fromEntries(
-                Object.keys(dataArray[0])
-                    .filter(key => key !== "TRACT20" && key !== "YEAR")
-                    .map(key => [key, aq.op.sum(key)])
-            )
-        )
-        .derive({
-                X_A18UND_PCT: d => d.X_POP !== 0 ? Math.round((d.X_A18UND / d.X_POP) * 100 * 10) / 10 : null,
-                X_ADULT_PCT:  d => d.X_POP !== 0 ? Math.round((d.X_ADULT / d.X_POP) * 100 * 10) / 10 : null,
-                X_A60UP_PCT:  d => d.X_POP !== 0 ? Math.round((d.X_A60UP / d.X_POP) * 100 * 10) / 10 : null,
-                X_ASN_PCT:    d => d.X_POP !== 0 ? Math.round((d.X_ASN / d.X_POP) * 100 * 10) / 10 : null,
-                X_HISP_PCT:   d => d.X_POP !== 0 ? Math.round((d.X_HISP / d.X_POP) * 100 * 10) / 10 : null,
-                X_NHBLK_PCT:  d => d.X_POP !== 0 ? Math.round((d.X_NHBLK / d.X_POP) * 100 * 10) / 10 : null,
-                X_NHWHT_PCT:  d => d.X_POP !== 0 ? Math.round((d.X_NHWHT / d.X_POP) * 100 * 10) / 10 : null,
-                X_NTV_PCT:    d => d.X_POP !== 0 ? Math.round((d.X_NTV / d.X_POP) * 100 * 10) / 10 : null,
-                X_OTH_PCT:    d => d.X_POP !== 0 ? Math.round((d.X_OTH / d.X_POP) * 100 * 10) / 10 : null,
-                X_OWN_PCT:    d => d.X_OHU !== 0 ? Math.round((d.X_OWN / d.X_OHU) * 100 * 10) / 10 : null,
-                X_RENT_PCT:   d => d.X_OHU !== 0 ? Math.round((d.X_RENT / d.X_OHU) * 100 * 10) / 10 : null,
-                X_OHU_PCT:    d => d.X_HU  !== 0 ? Math.round((d.X_OHU / d.X_HU) * 100 * 10) / 10 : null,
-                X_VAC_PCT:    d => d.X_HU  !== 0 ? Math.round((d.X_VAC / d.X_HU) * 100 * 10) / 10 : null
-            }); // Now derive works on the grouped table
-
-    let groupedData = grouped.objects();
-    console.log("✅ Grouped data:", groupedData);
-
-    return groupedData;
-}
-;
-
-
-    
-
-    // Test creating a stacked bar chart for age categories
-    function updateHighChart(selectedGroup) {
-        if (!grpbyYearData.length) {
-            console.warn("Warning: No grouped data available for chart.");
-            return;
-        }
-
-        // Extract years
-        const years = grpbyYearData.map(d => d.YEAR);
-
-        // Define dataset mappings based on selection
-        let seriesData = {
-            age: [
-            { name: fieldLabels.X_A60UP, data: grpbyYearData.map(d => d.X_A60UP || 0), stack: "age" },
-            { name: fieldLabels.X_ADULT, data: grpbyYearData.map(d => d.X_ADULT || 0), stack: "age" },
-            { name: fieldLabels.X_A18UND, data: grpbyYearData.map(d => d.X_A18UND || 0), stack: "age" },
- 
-            ],
-            ageRate: [
-            { name: fieldLabels.X_A60UP_PCT, data: grpbyYearData.map(d => d.X_A60UP_PCT || 0), stack: "ageRate" },
-            { name: fieldLabels.X_ADULT_PCT, data: grpbyYearData.map(d => d.X_ADULT_PCT || 0), stack: "ageRate" },
-            { name: fieldLabels.X_A18UND_PCT, data: grpbyYearData.map(d => d.X_A18UND_PCT || 0), stack: "ageRate" },    
-            ],
-            race: [
-                { name: fieldLabels.X_ASN, data: grpbyYearData.map(d => d.X_ASN || 0), stack: "race" },
-                { name: fieldLabels.X_HISP, data: grpbyYearData.map(d => d.X_HISP || 0), stack: "race" },
-                { name: fieldLabels.X_NHBLK, data: grpbyYearData.map(d => d.X_NHBLK || 0), stack: "race" },
-                { name: fieldLabels.X_NHWHT, data: grpbyYearData.map(d => d.X_NHWHT || 0), stack: "race" },
-                { name: fieldLabels.X_NTV, data: grpbyYearData.map(d => d.X_NTV || 0), stack: "race" },
-                { name: fieldLabels.X_OTH, data: grpbyYearData.map(d => d.X_OTH || 0), stack: "race" }
-            ],
-            raceRate: [
-                { name: fieldLabels.X_ASN_PCT, data: grpbyYearData.map(d => d.X_ASN_PCT || 0), stack: "raceRate" },
-                { name: fieldLabels.X_HISP_PCT, data: grpbyYearData.map(d => d.X_HISP_PCT || 0), stack: "raceRate" },
-                { name: fieldLabels.X_NHBLK_PCT, data: grpbyYearData.map(d => d.X_NHBLK_PCT || 0), stack: "raceRate" },
-                { name: fieldLabels.X_NHWHT_PCT, data: grpbyYearData.map(d => d.X_NHWHT_PCT || 0), stack: "raceRate" },
-                { name: fieldLabels.X_NTV_PCT, data: grpbyYearData.map(d => d.X_NTV_PCT || 0), stack: "raceRate" },
-                { name: fieldLabels.X_OTH_PCT, data: grpbyYearData.map(d => d.X_OTH_PCT || 0), stack: "raceRate" }
-            ],
-            housingOccupancy: [
-                { name: fieldLabels.X_OHU, data: grpbyYearData.map(d => d.X_OHU || 0), stack: "housingOccupancy" },
-                { name: fieldLabels.X_VAC, data: grpbyYearData.map(d => d.X_VAC || 0), stack: "housingOccupancy" }
-            ],
-            housingOccupancyRate: [
-                { name: fieldLabels.X_OHU_PCT, data: grpbyYearData.map(d => d.X_OHU_PCT || 0), stack: "housingOccupancyRate" },
-                { name: fieldLabels.X_VAC_PCT, data: grpbyYearData.map(d => d.X_VAC_PCT || 0), stack: "housingOccupancyRate" }
-            ],
-            housingTenure: [
-                { name: fieldLabels.X_OWN, data: grpbyYearData.map(d => d.X_OWN || 0), stack: "housingTenure" },
-                { name: fieldLabels.X_RENT, data: grpbyYearData.map(d => d.X_RENT || 0), stack: "housingTenure" }
-            ],
-            housingTenureRate: [
-                { name: fieldLabels.X_OWN_PCT, data: grpbyYearData.map(d => d.X_OWN_PCT || 0), stack: "housingTenureRate" },
-                { name: fieldLabels.X_RENT_PCT, data: grpbyYearData.map(d => d.X_RENT_PCT || 0), stack: "housingTenureRate" }
-            ]
+        // Firebase configuration
+        const firebaseConfig = {
+            // Hello and thank you for checking out my API key
+            apiKey: "AIzaSyB28a8taXxO9610Rc1Ai1bq_bYMIzgOleM",
+            authDomain: "ltwm-2020.firebaseapp.com",
+            projectId: "ltwm-2020",
+            storageBucket: "ltwm-2020.firebasestorage.app",
+            messagingSenderId: "263324499890",
+            appId: "1:263324499890:web:0b4eeabbe48e07f2376eab",
+            measurementId: "G-MVQXMGVRQ3"
         };
 
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);  // Initialize Firestore
 
-        // Render the Highcharts chart
-        Highcharts.chart("chart", {
-            chart: { type: "column" },
-            title: { text: "Population Distribution" },
-            xAxis: { categories: years, title: { text: "Year" } },
-            yAxis: {
-                min: 0,
-                max: selectedGroup.includes("Rate") ? 100 : null, // 👈 Limits y-axis to 100 for rate-based metrics
-                title: { text: selectedGroup.includes("Rate") ? "Percentage" : "Count" }
-            },
-            plotOptions: { column: { stacking: "normal" } },
-            series: seriesData[selectedGroup] || []
+        // 🌎 Global Variables
+        let data = []; // Stores selected tracts
+        let geojsonLayer; // Global GeoJSON layer reference
+        const mapStartZoom = 12; // Starting zoom level
+        const minLabelZoom = mapStartZoom + 2; // Labels appear only at zoom 14+
+        // Demo DC census tracts GeoJSON
+        const geojsonURL = "https://raw.githubusercontent.com/alexdingis/alexdingis.github.io/master/DC_2020_CT.geojson";
+        // const geojsonURL = "https://raw.githubusercontent.com/alexdingis/alexdingis.github.io/master/census_tracts.geojson";
+
+
+        // Ensure that label-toggle switch is turned on at load
+        // Ensure the switch is ON when the page loads
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("label-toggle").checked = true;
         });
-    }
 
 
-    document.addEventListener("DOMContentLoaded", function () {
-        let dropdown = document.getElementById("chartDropdown");
+        // grpbyData is the array that will be used to populate the High Charts
+        let grpbyYearData = [];
 
-        if (dropdown) {
-            dropdown.addEventListener("change", function () {
-                updateHighChart(this.value);
-            });
 
-            // ✅ Only initialize chart if there's data
-            if (grpbyYearData.length > 0) {
-                updateHighChart("age");
+        // Function to update Highcharts visibility based on data length
+        function updateChartVisibility() {
+            const chartDiv = document.getElementById("info-container");
+            if (data.length > 0) {
+                chartDiv.style.display = "block"; // Show chart
             } else {
-                console.warn("Chart not initialized: grpbyYearData is empty.");
+                chartDiv.style.display = "none"; // Hide chart
             }
         }
-    });
 
-
-
-    // Attach event listeners
-    // 📌 Fetch Firestore Data When "Get Data" is Clicked
-    document.getElementById("getDataBtn").addEventListener("click", function () {
-        console.log("🚀 Selected tracts before fetching:", data.map(d => d.TRACT20));
-
-        if (!Array.isArray(data) || data.length === 0) {
-            alert("No tracts selected! Please click on the map to select tracts.");
-            return;
+        // Function to clear data
+        function clearData() {
+            // Preserve selected tracts
+            let selectedTracts = data.map(d => d.TRACT20);
+            data = data.filter(d => selectedTracts.includes(d.TRACT20)); // Reset data
+            updateChartVisibility(); // Update chart visibility
         }
 
-        let selectedTracts = [...new Set(data.map(d => d.TRACT20))]; // Ensure unique values
-        console.log("🔥 Fetching Firestore data for:", selectedTracts);
-        getTractData(selectedTracts);
-    });
+        // Add data from user input
+        function addData() {
+            let userInput = prompt("Enter TRACT20 values as a comma-separated list, each enclosed in single quotes:\nExample: '11001002702', '11001002703', '11001002704'");
+
+            if (!userInput) {
+                alert("No input provided. Please enter at least one TRACT20 value.");
+                return;
+            }
+
+            // Convert input to an array
+            let tractArray = userInput.split(/,\s*/).map(item => item.replace(/'/g, ""));
+            console.log('here is the tractArray', tractArray)
+
+            // If all checks pass, call Firestore API
+            getTractData(tractArray);
+        }
+
+
+        // Firestore query for selected tracts
+        async function getTractData(tracts) {
+            // 1. Clear existing data
+
+            for (let tract of tracts) {
+                try {
+                    // 2. Get the document by TRACT20 (GEOID)
+                    const tractRef = doc(db, "tracts_2020", tract);
+                    const tractDoc = await getDoc(tractRef);
+
+                    if (!tractDoc.exists()) {
+                        console.error(`Error: No document found for GEOID ${tract}`);
+                        continue; // Skip to the next tract
+                    }
+
+                    // 3. Get sub-collections (years) from the TRACT20 document
+                    const yearsCollectionRef = collection(tractRef, "years");
+                    const yearSubCollections = await getDocs(yearsCollectionRef);
+
+                    if (yearSubCollections.empty) {
+                        console.warn(`Warning: No year data found for GEOID ${tract}`);
+                        continue;
+                    }
+
+                    // 4. Process and flatten each sub-collection (year)
+                    yearSubCollections.forEach(subDoc => {
+                        let row = {
+                            TRACT20: tract,  // GEOID as first column
+                            YEAR: subDoc.id, // Year as second column
+                            ...subDoc.data() // Spread remaining columns
+                        };
+                        data.push(row);
+                    });
+
+                } catch (error) {
+                    console.error(`Error retrieving data for GEOID ${tract}:`, error);
+                }
+            }
+            // Update the chart visibility
+            updateChartVisibility(); // Update chart visibility after data retrieval
+
+            // Group the data for display in the chart by year
+            grpbyYearData = groupByYear(data);
+            console.log("Group-by data:", grpbyYearData); // Log final structured data
+            updateHighChart(document.getElementById("chartDropdown").value, document.getElementById("secondaryDropdown").value);
+        }
+
+        // Group the data in the Arquero dataframe by year
+        function groupByYear(dataArray) {
+            if (!dataArray.length) {
+                console.warn("Warning: No data available for grouping.");
+                return [];
+            }
+
+            // 🔍 Log actual column names for debugging
+            console.log("🔍 Column names in dataArray:", Object.keys(dataArray[0]));
+
+            // 🔹 Ensure all rows have required columns
+            const expectedColumns = ["TRACT20", "YEAR", "X_A18UND", "X_A60UP", "X_ADULT", "X_POP"];
+            dataArray = dataArray.filter(row =>
+                expectedColumns.every(col => col in row)
+            );
+
+            if (!dataArray.length) {
+                console.error("❌ No valid data rows remaining after filtering. Check Firestore schema.");
+                return [];
+            }
+
+            // 📌 Convert to Arquero table
+            let df = aq.from(dataArray);
+
+            // 🏗 Group and roll up numerical columns
+            let grouped = df
+                .groupby("YEAR")
+                .rollup(
+                    Object.fromEntries(
+                        Object.keys(dataArray[0])
+                            .filter(key => key !== "TRACT20" && key !== "YEAR")
+                            .map(key => [key, aq.op.sum(key)])
+                    )
+                )
+                .derive({
+                    X_A18UND_PCT: d => d.X_POP !== 0 ? Math.round((d.X_A18UND / d.X_POP) * 100 * 10) / 10 : null,
+                    X_ADULT_PCT: d => d.X_POP !== 0 ? Math.round((d.X_ADULT / d.X_POP) * 100 * 10) / 10 : null,
+                    X_A60UP_PCT: d => d.X_POP !== 0 ? Math.round((d.X_A60UP / d.X_POP) * 100 * 10) / 10 : null,
+                    X_ASN_PCT: d => d.X_POP !== 0 ? Math.round((d.X_ASN / d.X_POP) * 100 * 10) / 10 : null,
+                    X_HISP_PCT: d => d.X_POP !== 0 ? Math.round((d.X_HISP / d.X_POP) * 100 * 10) / 10 : null,
+                    X_NHBLK_PCT: d => d.X_POP !== 0 ? Math.round((d.X_NHBLK / d.X_POP) * 100 * 10) / 10 : null,
+                    X_NHWHT_PCT: d => d.X_POP !== 0 ? Math.round((d.X_NHWHT / d.X_POP) * 100 * 10) / 10 : null,
+                    X_NTV_PCT: d => d.X_POP !== 0 ? Math.round((d.X_NTV / d.X_POP) * 100 * 10) / 10 : null,
+                    X_OTH_PCT: d => d.X_POP !== 0 ? Math.round((d.X_OTH / d.X_POP) * 100 * 10) / 10 : null,
+                    X_OWN_PCT: d => d.X_OHU !== 0 ? Math.round((d.X_OWN / d.X_OHU) * 100 * 10) / 10 : null,
+                    X_RENT_PCT: d => d.X_OHU !== 0 ? Math.round((d.X_RENT / d.X_OHU) * 100 * 10) / 10 : null,
+                    X_OHU_PCT: d => d.X_HU !== 0 ? Math.round((d.X_OHU / d.X_HU) * 100 * 10) / 10 : null,
+                    X_VAC_PCT: d => d.X_HU !== 0 ? Math.round((d.X_VAC / d.X_HU) * 100 * 10) / 10 : null
+                }); // Now derive works on the grouped table
+
+            let groupedData = grouped.objects();
+            console.log("✅ Grouped data:", groupedData);
+
+            return groupedData;
+        }
+        ;
 
 
 
 
-    //
-    // Clear Data Button: Reset selection
-    document.getElementById("clearDataBtn").addEventListener("click", function () {
-        data = []; // Reset selected tracts
+        // Test creating a stacked bar chart for age categories
+        function updateHighChart(primarySelection, secondarySelection) {
 
-        if (geojsonLayer) {
-            geojsonLayer.eachLayer(layer => {
-                layer.setStyle({
-                    color: "#3388ff", // Restore default border
-                    weight: 2,
-                    fillOpacity: 0.0
-                });
+            if (!grpbyYearData.length) {
+                console.warn("Warning: No grouped data available for chart.");
+                return;
+            }
+
+            // Extract years
+            const years = grpbyYearData.map(d => d.YEAR);
+
+            // Define dataset mappings based on selection
+            let seriesData = {
+                age: [
+                    { name: fieldLabels.X_A60UP, data: grpbyYearData.map(d => d.X_A60UP || 0), stack: "age" },
+                    { name: fieldLabels.X_ADULT, data: grpbyYearData.map(d => d.X_ADULT || 0), stack: "age" },
+                    { name: fieldLabels.X_A18UND, data: grpbyYearData.map(d => d.X_A18UND || 0), stack: "age" },
+
+                ],
+                ageRate: [
+                    { name: fieldLabels.X_A60UP_PCT, data: grpbyYearData.map(d => d.X_A60UP_PCT || 0), stack: "ageRate" },
+                    { name: fieldLabels.X_ADULT_PCT, data: grpbyYearData.map(d => d.X_ADULT_PCT || 0), stack: "ageRate" },
+                    { name: fieldLabels.X_A18UND_PCT, data: grpbyYearData.map(d => d.X_A18UND_PCT || 0), stack: "ageRate" },
+                ],
+                race: [
+                    { name: fieldLabels.X_ASN, data: grpbyYearData.map(d => d.X_ASN || 0), stack: "race" },
+                    { name: fieldLabels.X_HISP, data: grpbyYearData.map(d => d.X_HISP || 0), stack: "race" },
+                    { name: fieldLabels.X_NHBLK, data: grpbyYearData.map(d => d.X_NHBLK || 0), stack: "race" },
+                    { name: fieldLabels.X_NHWHT, data: grpbyYearData.map(d => d.X_NHWHT || 0), stack: "race" },
+                    { name: fieldLabels.X_NTV, data: grpbyYearData.map(d => d.X_NTV || 0), stack: "race" },
+                    { name: fieldLabels.X_OTH, data: grpbyYearData.map(d => d.X_OTH || 0), stack: "race" }
+                ],
+                raceRate: [
+                    { name: fieldLabels.X_ASN_PCT, data: grpbyYearData.map(d => d.X_ASN_PCT || 0), stack: "raceRate" },
+                    { name: fieldLabels.X_HISP_PCT, data: grpbyYearData.map(d => d.X_HISP_PCT || 0), stack: "raceRate" },
+                    { name: fieldLabels.X_NHBLK_PCT, data: grpbyYearData.map(d => d.X_NHBLK_PCT || 0), stack: "raceRate" },
+                    { name: fieldLabels.X_NHWHT_PCT, data: grpbyYearData.map(d => d.X_NHWHT_PCT || 0), stack: "raceRate" },
+                    { name: fieldLabels.X_NTV_PCT, data: grpbyYearData.map(d => d.X_NTV_PCT || 0), stack: "raceRate" },
+                    { name: fieldLabels.X_OTH_PCT, data: grpbyYearData.map(d => d.X_OTH_PCT || 0), stack: "raceRate" }
+                ],
+                housingOccupancy: [
+                    { name: fieldLabels.X_OHU, data: grpbyYearData.map(d => d.X_OHU || 0), stack: "housingOccupancy" },
+                    { name: fieldLabels.X_VAC, data: grpbyYearData.map(d => d.X_VAC || 0), stack: "housingOccupancy" }
+                ],
+                housingOccupancyRate: [
+                    { name: fieldLabels.X_OHU_PCT, data: grpbyYearData.map(d => d.X_OHU_PCT || 0), stack: "housingOccupancyRate" },
+                    { name: fieldLabels.X_VAC_PCT, data: grpbyYearData.map(d => d.X_VAC_PCT || 0), stack: "housingOccupancyRate" }
+                ],
+                housingTenure: [
+                    { name: fieldLabels.X_OWN, data: grpbyYearData.map(d => d.X_OWN || 0), stack: "housingTenure" },
+                    { name: fieldLabels.X_RENT, data: grpbyYearData.map(d => d.X_RENT || 0), stack: "housingTenure" }
+                ],
+                housingTenureRate: [
+                    { name: fieldLabels.X_OWN_PCT, data: grpbyYearData.map(d => d.X_OWN_PCT || 0), stack: "housingTenureRate" },
+                    { name: fieldLabels.X_RENT_PCT, data: grpbyYearData.map(d => d.X_RENT_PCT || 0), stack: "housingTenureRate" }
+                ]
+            };
+
+
+            // Render the Highcharts chart
+            Highcharts.chart("chart", {
+                chart: { type: "column" },
+                title: { text: "Population Distribution" },
+                xAxis: { categories: years, title: { text: "Year" } },
+                yAxis: [
+                    { // Primary Y-Axis
+                        min: 0,
+                        max: primarySelection.includes("Rate") ? 100 : null,
+                        title: { text: primarySelection.includes("Rate") ? "Percentage" : "Count" },
+                        opposite: false // Primary stays on the left
+                    },
+                    secondarySelection ? { // Secondary Y-Axis (Only if selected)
+                        min: 0,
+                        max: secondarySelection.includes("Rate") ? 100 : null,
+                        title: { text: secondarySelection.includes("Rate") ? "Percentage" : "Count" },
+                        opposite: true // Secondary axis appears on the right
+                    } : null
+                ].filter(axis => axis !== null), // Remove null if no secondary axis is needed
+
+                plotOptions: { column: { stacking: "normal" } },
+                series: [
+                    ...seriesData[primarySelection] || [], // Keep primary data
+                    ...(secondarySelection ? [{
+                        name: fieldLabels[secondarySelection],
+                        data: grpbyYearData.map(d => {
+                            let value = d[secondarySelection];
+                            console.log(`Year: ${d.YEAR}, ${secondarySelection}:`, value); // Debug log
+                            return value !== undefined ? value : null; // Use null for missing values
+                        }),
+                        type: "line",
+                        yAxis: 1,
+                        color: "red" // Optional: Make it stand out
+                    }] : []) // Only add if secondary data is selected
+                ]
             });
         }
-        updateChartVisibility();
-        console.log("🗑 Cleared all selected tracts.");
-    });
 
-    // Initialize the map with Leaflet
-    const map = L.map("map").setView([38.884, -77.025], 12);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
 
-    // You mean I should add it where this comment block is?
-
-    // Fetch and Display GeoJSON
-
-    // Function to load and update GeoJSON
-    function loadGeoJSON() {
-        fetch(geojsonURL)
-            .then(response => response.json())
-            .then(jsonData => {
-                if (geojsonLayer) {
-                    map.removeLayer(geojsonLayer);
+        document.addEventListener("DOMContentLoaded", function () {
+            let primaryDropdown = document.getElementById("chartDropdown");
+            let secondaryDropdown = document.getElementById("secondaryDropdown");
+            if (primaryDropdown && secondaryDropdown) {
+                primaryDropdown.addEventListener("change", function () {
+                    updateHighChart(primaryDropdown.value, secondaryDropdown.value);
+                });
+                secondaryDropdown.addEventListener("change", function () {
+                    updateHighChart(primaryDropdown.value, secondaryDropdown.value);
+                });
+                // Only initialize chart if there's data
+                if (grpbyYearData.length > 0) {
+                    updateHighChart("age", "");
+                    secondaryDropdown.value = ""; // Ensure secondary starts empty
+                } else {
+                    console.warn("Chart not initialized: grpbyYearData is empty.");
                 }
+            }
+        });
 
-                geojsonLayer = L.geoJSON(jsonData, {
-                    style: function () {
-                        return {
-                            color: "#3388ff", // Default border color
-                            weight: 2,
-                            fillOpacity: 0.0  // Transparent fill
-                        };
-                    },
-                    onEachFeature: function (feature, layer) {
-                        let tractValue = feature.properties.TRACT20;
-                        let toggleSwitch = document.getElementById("label-toggle");
+        // Attach event listeners
+        // Fetch Firestore Data When "Get Data" is Clicked
+        document.getElementById("getDataBtn").addEventListener("click", function () {
+            console.log("Selected tracts before fetching:", data.map(d => d.TRACT20));
 
-                        // If toggle is ON and zoom is 14+, display the last 6 characters as a label
-                        function updateLabel() {
-                            if (toggleSwitch.checked && map.getZoom() >= minLabelZoom) {
-                                let tractID = tractValue.slice(-6);
-                                layer.bindTooltip(tractID, { 
-                                    permanent: true, 
-                                    direction: "center", 
-                                    className: "tract-label"
-                                });
-                            } else {
-                                layer.unbindTooltip(); // Remove label when zoomed out
-                            }
-                        }
+            // Reset Primary Dropdown to "Age (Count)"
+            document.getElementById("chartDropdown").value = "age";
 
-                        // Run initially to set the label state
-                        updateLabel();
+            // Reset Secondary Dropdown to "Choose Secondary Y-Axis Data"
+            document.getElementById("secondaryDropdown").value = "";
 
-                        // Listen for zoom events and update labels
-                        map.on("zoomend", updateLabel);
+            if (!Array.isArray(data) || data.length === 0) {
+                alert("No tracts selected! Please click on the map to select tracts.");
+                return;
+            }
 
-                        // 📌 Click event to toggle selection
-                        layer.on("click", function () {
-                            let index = data.findIndex(d => d.TRACT20 === tractValue);
+            let selectedTracts = [...new Set(data.map(d => d.TRACT20))]; // Ensure unique values
+            console.log("Fetching Firestore data for:", selectedTracts);
+            getTractData(selectedTracts);
+        });
 
-                            if (index === -1) {
-                                // 🟢 Add to selection
-                                data.push({ TRACT20: tractValue });
-                                layer.setStyle({
-                                    color: "#008080", // Teal outline
-                                    weight: 3,
-                                    fillColor: "#008080",
-                                    fillOpacity: 0.4
-                                });
-                            } else {
-                                // 🔴 Remove from selection
-                                data.splice(index, 1);
-                                layer.setStyle({
-                                    color: "#3388ff", // Restore default border
-                                    weight: 2,
-                                    fillOpacity: 0.0
-                                });
-                            }
+        // Clear Data Button: Reset selection
+        document.getElementById("clearDataBtn").addEventListener("click", function () {
+            data = []; // Reset selected tracts
 
-                            console.log("✅ Updated selected tracts:", data.map(d => d.TRACT20));
-                        });
-                    }
-                }).addTo(map);
+            if (geojsonLayer) {
+                geojsonLayer.eachLayer(layer => {
+                    layer.setStyle({
+                        color: "#3388ff", // Restore default border
+                        weight: 2,
+                        fillOpacity: 0.0
+                    });
+                });
+            }
+            updateChartVisibility();
+            console.log("🗑 Cleared all selected tracts.");
+        });
+
+        // Initialize the map with Leaflet
+        const map = L.map("map").setView([38.884, -77.025], 12);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Leaflet Geocoder
+        // Add a geocoder search box
+        // Load the geocoder after the map has loaded
+        document.addEventListener("DOMContentLoaded", function () {
+            const geocoder = L.Control.geocoder({
+                defaultMarkGeocode: false,
+                geocoder: L.Control.Geocoder.nominatim()
             })
-            .catch(error => console.error("Error loading GeoJSON:", error));
-    }
+                .on('markgeocode', function (e) {
+                    map.setView(e.geocode.center); // Keeps current zoom level
+                })
+                .addTo(map);
+        });
 
-        // 🔹 Function to update labels when the toggle changes
+        // Fetch and Display GeoJSON
+
+        // Function to load and update GeoJSON
+        function loadGeoJSON() {
+            fetch(geojsonURL)
+                .then(response => response.json())
+                .then(jsonData => {
+                    console.log("GeoJSON successfully loaded:", jsonData);
+                    if (!jsonData.features || jsonData.features.length === 0) {
+                        console.error("Error: GeoJSON contains no features.");
+                        return;
+                    }
+                    if (geojsonLayer) {
+                        map.removeLayer(geojsonLayer);
+                    }
+
+                    geojsonLayer = L.geoJSON(jsonData, {
+                        style: function () {
+                            return {
+                                color: "#3388ff", // Default border color
+                                weight: 2,
+                                fillOpacity: 0.0  // Transparent fill
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            // console.log("Layer added:", feature.properties.TRACT20)
+                            let tractValue = feature.properties.TRACT20;
+                            let toggleSwitch = document.getElementById("label-toggle");
+
+                            // If toggle is ON and zoom is 14+, display the last 6 characters as a label
+                            function updateLabel() {
+                                if (!tractValue) {
+                                    console.warn("Skipping feature with missing TRACT20");
+                                    return; // Skip this feature if TRACT20 is missing
+                                }
+                                if (toggleSwitch.checked && map.getZoom() >= minLabelZoom) {
+                                    let tractID = tractValue.slice(-6);
+                                    layer.bindTooltip(tractID, {
+                                        permanent: true,
+                                        direction: "center",
+                                        className: "tract-label"
+                                    });
+                                    // console.log("Label added for:", tractValue)
+                                } else {
+                                    layer.unbindTooltip(); // Remove label when zoomed out
+                                }
+                            }
+
+                            // Run initially to set the label state
+                            updateLabel();
+
+                            // Listen for zoom events and update labels
+                            map.on("zoomend", updateLabel);
+
+                            // Click event to toggle selection
+                            layer.on("click", function () {
+                                let index = data.findIndex(d => d.TRACT20 === tractValue);
+
+                                if (index === -1) {
+                                    // 🟢 Add to selection
+                                    data.push({ TRACT20: tractValue });
+                                    layer.setStyle({
+                                        color: "#008080", // Teal outline
+                                        weight: 3,
+                                        fillColor: "#008080",
+                                        fillOpacity: 0.4
+                                    });
+                                } else {
+                                    //Remove from selection
+                                    data.splice(index, 1);
+                                    layer.setStyle({
+                                        color: "#3388ff", // Restore default border
+                                        weight: 2,
+                                        fillOpacity: 0.0
+                                    });
+                                }
+
+                                console.log("Updated selected tracts:", data.map(d => d.TRACT20));
+                            });
+                        }
+                    }).addTo(map);
+                    console.log("GeoJSON Layer assigned:", geojsonLayer);
+                    if (!geojsonLayer) {
+                        console.error("Error: geojsonLayer is still undefined after assignment!");
+                    }
+                })
+                .catch(error => console.error("Error loading GeoJSON:", error));
+        }
+
+        //Function to update labels when the toggle changes
         document.getElementById("label-toggle").addEventListener("change", function () {
             if (geojsonLayer) {
                 geojsonLayer.eachLayer(layer => {
@@ -657,50 +840,77 @@
                     }
                     if (this.checked) {
                         let tractID = layer.feature.properties.TRACT20.slice(-6);
-                        layer.bindTooltip(tractID, { 
-                            permanent: true, 
-                            direction: "center", 
+                        layer.bindTooltip(tractID, {
+                            permanent: true,
+                            direction: "center",
                             className: "tract-label"
                         });
                     }
                 });
             }
         });
+        // When someone types in an address then clicks search, the Leaflet's Geocoder will take them there
+        document.getElementById("searchBtn").addEventListener("click", function () {
+            let query = document.getElementById("addressSearch").value.trim();
+            console.log("Search Query:", query);
+            if (!query) {
+                alert("Please enter a location.");
+                return;
+            }
+            let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+            console.log("Fetching from:", url);
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Full Geocode Response:", data);
 
+                    if (data.length > 0) {
+                        let latlng = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                        map.setView(latlng);
+                        console.log("Zooming to:", latlng);
+                        document.getElementById("addressSearch").value = "";
+                        document.getElementById("addressSearch").placeholder = "Address";
+                    } else {
+                        alert("Location not found.");
+                        document.getElementById("addressSearch").value = "";
+                        document.getElementById("addressSearch").placeholder = "Address";
+                    }
+                })
+                .catch(error => console.error("Geocoder error:", error));
+        });
+        // Field name mapping
+        const fieldLabels = {
+            X_A18UND: "Under 18",
+            X_A18UND_PCT: "Under 18 (Rate)",
+            X_A60UP: "60+",
+            X_A60UP_PCT: "60+ (Rate)",
+            X_ADULT: "Adults",
+            X_ADULT_PCT: "Adults (Rate)",
+            X_ASN: "Asian",
+            X_ASN_PCT: "Asian (Rate)",
+            X_HISP: "Hispanic",
+            X_HISP_PCT: "Hispanic (Rate)",
+            X_NHBLK: "Black (Non-Hispanic)",
+            X_NHBLK_PCT: "Black (Non-Hispanic) (Rate)",
+            X_NHWHT: "White (Non-Hispanic)",
+            X_NHWHT_PCT: "White (Non-Hispanic) (Rate)",
+            X_NTV: "Native American",
+            X_NTV_PCT: "Native American (Rate)",
+            X_OTH: "Other",
+            X_OTH_PCT: "Other (Rate)",
+            X_OHU: "Occupied Housing Units",
+            X_OHU_PCT: "Occupied (Rate)",
+            X_VAC: "Vacant",
+            X_VAC_PCT: "Vacant (Rate)",
+            X_OWN: "Owner-Occupied",
+            X_OWN_PCT: "Owner-Occupied (Rate)",
+            X_RENT: "Renter-Occupied",
+            X_RENT_PCT: "Renter-Occupied (Rate)"
+        };
 
-    
-    // Field name mapping
-    const fieldLabels = {
-        X_A18UND: "Under 18",
-        X_A18UND_PCT: "Under 18 (Rate)",
-        X_A60UP:      "60+",
-        X_A60UP_PCT:  "60+ (Rate)",
-        X_ADULT:      "Adults",
-        X_ADULT_PCT:  "Adults (Rate)",
-        X_ASN:        "Asian",
-        X_ASN_PCT:    "Asian (Rate)",
-        X_HISP:       "Hispanic",
-        X_HISP_PCT:   "Hispanic (Rate)",
-        X_NHBLK:      "Black (Non-Hispanic)",
-        X_NHBLK_PCT:  "Black (Non-Hispanic) (Rate)",
-        X_NHWHT:      "White (Non-Hispanic)",
-        X_NHWHT_PCT:  "White (Non-Hispanic) (Rate)",
-        X_NTV:        "Native American",
-        X_NTV_PCT:    "Native American (Rate)",
-        X_OTH:        "Other",
-        X_OTH_PCT:    "Other (Rate)",
-        X_OHU:        "Occupied Housing Units",
-        X_OHU_PCT:    "Occupied (Rate)",
-        X_VAC:        "Vacant",
-        X_VAC_PCT:    "Vacant (Rate)",
-        X_OWN:        "Owner-Occupied",
-        X_OWN_PCT:    "Owner-Occupied (Rate)",
-        X_RENT:       "Renter-Occupied",
-        X_RENT_PCT:   "Renter-Occupied (Rate)"
-    };
-
-    loadGeoJSON();
-</script>
-
+        loadGeoJSON();
+        //console.log("Loaded GeoJSON Layer:", geojsonLayer);
+        // geojsonLayer.eachLayer(layer => console.log(layer.feature.properties.TRACT20));
+    </script>
 </body>
 </html>
