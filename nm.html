@@ -221,8 +221,21 @@
                 <p>Select one or more census tracts then click Get Data. The graph below the map will populate with
                     trends about the selected neighborhoods. You can then use the dropdown above the graph to view
                     different trends about the selected neighborhoods.</p>
-                <p style="color: #ce2029">Nationwide demographic data for census tracts is available, but at this stage,
-                    only Washington, DC has mapped polygons as I build this project.</p>
+                <h4>Available Geographies</h4>
+                <p style="color: #ce2029">Nationwide demographic data for census tracts is available. However, polygons are available only for a handful of jurisdictions while I build out the tile set to deploy the full national census tracts.</p>
+                <div class="btn-group mb-3" role="group" aria-label="County Selection">                 
+                    <input type="radio" class="btn-check" name="btnradio" id="btnradio-baltimore" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btnradio-baltimore">Baltimore City</label>
+                    <input type="radio" class="btn-check" name="btnradio" id="btnradio-genessee" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btnradio-genessee">Genesee County</label>
+                    <input type="radio" class="btn-check" name="btnradio" id="btnradio-mobile" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btnradio-mobile">Mobile County</label>
+                    <input type="radio" class="btn-check" name="btnradio" id="btnradio-sf" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="btnradio-sf">San Francisco</label>
+                    <input type="radio" class="btn-check" name="btnradio" id="btnradio-dc" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="btnradio-dc">Washington, DC</label>
+                  </div>      
+                <h4>Map Toggles</h4>
                 <!-- Toggle Switch for Data Display -->
                 <div class="form-check form-switch mt-3 mb-4">
                     <input class="form-check-input" type="checkbox" id="label-toggle" checked>
@@ -349,7 +362,7 @@
                 <h4>Deploy Leaflet Web Map and High Charts</h4>
                 <p>Once the Firebase database and web page were set up, I used a simple query to test fetching data using GEOIDs input. I then made sure that the High Charts API could build the expected graphs from the fetched data. This was to ensure functionality prior to implementing the web map to query data because that is an added layer of complexity. Once I was satisfied with the ability to query data by GEOID and build a graph, I implemented Leaflet to allow the user to select census tracts to query data. Very people know their census tract GEOID whereas almost anyone can point-and-click on a web map to identify a place of interest.</p>
                 <h4>Challenges and Lessons Learned</h4>
-                <p>Web browsers can only handle so many polygons on an interactive map. In order to expand the polygons available to be nationwide, I need to implement a national tile set then use that data. I am looking into Map Box and Esri solutions for this. Once implemented, I'll need to update the functionality to query data by census tract GEOID.</p>
+                <p>Web browsers can only handle so many polygons on an interactive map. For now, I allow map users to switch between five different areas. In order to expand the polygons available to be nationwide, I need to implement a national tile set then use that data. I am looking into Map Box and Esri solutions for this. Once implemented, I'll need to update the functionality to query data by census tract GEOID.</p>
                 <p>GitHub Pages is good for static hosting but may not be suitable for this application because there is no backend.</p>
                 <p></p>
                 <h4>Future Development</h4>
@@ -413,13 +426,32 @@
         const db = getFirestore(app);  // Initialize Firestore
 
         // 🌎 Global Variables
-        let data = []; // Stores selected tracts
-        let geojsonLayer; // Global GeoJSON layer reference
-        const mapStartZoom = 12; // Starting zoom level
-        const minLabelZoom = mapStartZoom + 2; // Labels appear only at zoom 14+
+        let data            = [];               // Stores selected tracts
+        let geojsonLayer;                       // Global GeoJSON layer reference
+        const mapStartZoom  = 12;               // Starting zoom level
+        const minLabelZoom  = mapStartZoom + 2; // Labels appear only at zoom 14+
         // Demo DC census tracts GeoJSON
-        const geojsonURL = "https://raw.githubusercontent.com/alexdingis/alexdingis.github.io/master/DC_2020_CT.geojson";
-        // const geojsonURL = "https://raw.githubusercontent.com/alexdingis/alexdingis.github.io/master/census_tracts.geojson";
+        const geojsonURL    = "https://raw.githubusercontent.com/alexdingis/alexdingis.github.io/master/DC_2020_CT.geojson";
+        let currentCounty   = "btnradio-dc"; // Default to Washington, DC
+
+        // Available geographies for now
+        const polyDir            = "https://raw.githubusercontent.com/alexdingis/alexdingis.github.io/master/polygons/";
+        const countyGeoJSONPaths = {
+            "btnradio-dc":        `${polyDir}DC_2020_CT.geojson`,
+            "btnradio-baltimore": `${polyDir}Baltimore_City.geojson`,
+            "btnradio-genessee":  `${polyDir}Genessee_County.geojson`,
+            "btnradio-mobile":    `${polyDir}Mobile_County.geojson`,
+            "btnradio-sf":        `${polyDir}San_Francisco.geojson`
+        };
+        const countyCenters = {
+        "btnradio-dc":        [38.884, -77.025], // Washington, DC
+        "btnradio-baltimore": [39.285, -76.62],  // Baltimore City
+        "btnradio-genessee":  [43.002, -83.693], // Genesee County
+        "btnradio-mobile":    [30.701, -88.178], // Mobile County
+        "btnradio-sf":        [37.779, -122.437] // San Francisco
+    };
+
+
 
 
         // Ensure that label-toggle switch is turned on at load
@@ -694,22 +726,46 @@
             }
         });
 
+        // This event listener detects that a radio button has been selected and if it is different from currentCounty
+        document.addEventListener("DOMContentLoaded", function () {
+        // Select all radio buttons
+        const radioButtons = document.querySelectorAll("input[name='btnradio']");
+        // Add event listeners to each radio button
+        radioButtons.forEach(button => {
+            button.addEventListener("change", function () {
+                if (this.id === currentCounty) {
+                    console.log(`${this.id} is already selected, no action needed.`);
+                    return; // Exit if the selected county is the same as the current one
+                }
+                console.log(`Changing county to: ${this.id}`);
+                // Update the current county
+                currentCounty = this.id;
+                // Load the new GeoJSON file
+                loadGeoJSON();
+                // Pan the map to the new county center
+                if (countyCenters[currentCounty]) {
+                    map.setView(countyCenters[currentCounty]);
+                    console.log(`Panning to ${currentCounty}:`, countyCenters[currentCounty]);
+                } else {
+                    console.warn(`No center coordinates found for ${currentCounty}`);
+                }
+            });
+        });
+    });
+
+
         // Attach event listeners
         // Fetch Firestore Data When "Get Data" is Clicked
         document.getElementById("getDataBtn").addEventListener("click", function () {
             console.log("Selected tracts before fetching:", data.map(d => d.TRACT20));
-
             // Reset Primary Dropdown to "Age (Count)"
             document.getElementById("chartDropdown").value = "age";
-
             // Reset Secondary Dropdown to "Choose Secondary Y-Axis Data"
             document.getElementById("secondaryDropdown").value = "";
-
             if (!Array.isArray(data) || data.length === 0) {
                 alert("No tracts selected! Please click on the map to select tracts.");
                 return;
             }
-
             let selectedTracts = [...new Set(data.map(d => d.TRACT20))]; // Ensure unique values
             console.log("Fetching Firestore data for:", selectedTracts);
             getTractData(selectedTracts);
@@ -755,16 +811,34 @@
 
         // Function to load and update GeoJSON
         function loadGeoJSON() {
+            // Get the correct GeoJSON URL for the selected county
+            const geojsonURL = countyGeoJSONPaths[currentCounty];
+
+            if (!geojsonURL) {
+                console.error(`❌ No GeoJSON file found for ${currentCounty}`);
+                return;
+            }
+
+            console.log(`🌍 Loading GeoJSON: ${geojsonURL}`);
+
+            // Remove existing layer if it exists
+            if (geojsonLayer) {
+                map.removeLayer(geojsonLayer);
+                geojsonLayer = null;
+                console.log("🗑 Removed previous GeoJSON layer.");
+            }
+
+            // Clear selected tracts data
+            data = [];
+            console.log("🔄 Reset selected tracts.");
+
+            // Fetch and add new GeoJSON
             fetch(geojsonURL)
                 .then(response => response.json())
                 .then(jsonData => {
-                    console.log("GeoJSON successfully loaded:", jsonData);
                     if (!jsonData.features || jsonData.features.length === 0) {
-                        console.error("Error: GeoJSON contains no features.");
+                        console.error("❌ Error: GeoJSON contains no features.");
                         return;
-                    }
-                    if (geojsonLayer) {
-                        map.removeLayer(geojsonLayer);
                     }
 
                     geojsonLayer = L.geoJSON(jsonData, {
@@ -776,16 +850,11 @@
                             };
                         },
                         onEachFeature: function (feature, layer) {
-                            // console.log("Layer added:", feature.properties.TRACT20)
                             let tractValue = feature.properties.TRACT20;
                             let toggleSwitch = document.getElementById("label-toggle");
 
-                            // If toggle is ON and zoom is 14+, display the last 6 characters as a label
                             function updateLabel() {
-                                if (!tractValue) {
-                                    console.warn("Skipping feature with missing TRACT20");
-                                    return; // Skip this feature if TRACT20 is missing
-                                }
+                                if (!tractValue) return; // Skip missing TRACT20
                                 if (toggleSwitch.checked && map.getZoom() >= minLabelZoom) {
                                     let tractID = tractValue.slice(-6);
                                     layer.bindTooltip(tractID, {
@@ -793,24 +862,19 @@
                                         direction: "center",
                                         className: "tract-label"
                                     });
-                                    // console.log("Label added for:", tractValue)
                                 } else {
-                                    layer.unbindTooltip(); // Remove label when zoomed out
+                                    layer.unbindTooltip();
                                 }
                             }
 
-                            // Run initially to set the label state
                             updateLabel();
-
-                            // Listen for zoom events and update labels
                             map.on("zoomend", updateLabel);
 
-                            // Click event to toggle selection
                             layer.on("click", function () {
                                 let index = data.findIndex(d => d.TRACT20 === tractValue);
 
                                 if (index === -1) {
-                                    // 🟢 Add to selection
+                                    // Add to selection
                                     data.push({ TRACT20: tractValue });
                                     layer.setStyle({
                                         color: "#008080", // Teal outline
@@ -819,7 +883,7 @@
                                         fillOpacity: 0.4
                                     });
                                 } else {
-                                    //Remove from selection
+                                    // Remove from selection
                                     data.splice(index, 1);
                                     layer.setStyle({
                                         color: "#3388ff", // Restore default border
@@ -828,17 +892,17 @@
                                     });
                                 }
 
-                                console.log("Updated selected tracts:", data.map(d => d.TRACT20));
+                                console.log("📌 Updated selected tracts:", data.map(d => d.TRACT20));
                             });
                         }
                     }).addTo(map);
-                    console.log("GeoJSON Layer assigned:", geojsonLayer);
-                    if (!geojsonLayer) {
-                        console.error("Error: geojsonLayer is still undefined after assignment!");
-                    }
+
+                    console.log("✅ New GeoJSON layer added.");
                 })
-                .catch(error => console.error("Error loading GeoJSON:", error));
+                .catch(error => console.error("❌ Error loading GeoJSON:", error));
         }
+
+        // End of LoadGeoJSON function
 
         //Function to update labels when the toggle changes
         document.getElementById("label-toggle").addEventListener("change", function () {
