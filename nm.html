@@ -200,8 +200,7 @@
                     need to download and process data, allowing anyone—from researchers to the public—to instantly
                     access, visualize, and interact with historical trends through an intuitive point-and-click
                     interface. The LTWM uses Firebase for data storage and API access, GitHub Pages to host the
-                    interactive web interface, Leaflet to deploy the web map, Mapbox vector tiles to visualize
-                    neighborhoods across the United States, and High Charts to visualize the trends.</p>
+                    interactive web interface, Leaflet to deploy the web map, and High Charts to visualize the trends. The plan is to extend the map to nationwide coverage using Map Box to host a national census tract tileset.</p>
                 <p>The Longitudinal Tract Web Map (LTWM) draws on data from the <a
                         href="https://s4.ad.brown.edu/projects/diversity/researcher/bridging.htm"
                         target="_blank">Longitudinal Tract Database</a> (LTDB), developed by Dr. John R. Logan, Dr.
@@ -317,17 +316,17 @@
                     analyzing neighborhood changes over time.</p>
                 <h3>Project Development</h3>
                 <p>I began working on this tool one month before the birth of my first child. I had little previous web
-                    development experience. I knew I'd need to implement project management, divide the project into
-                    chunks, and work on what I could when I could in order to complete this project.</p>
+                    development experience - the last time I used JavaScript, <code>let</code> and <code>const</code> were still called <code>var</code>. I knew I'd need to implement project management, divide the project into
+                    chunks, and work on what I could when I could in order to complete this project. Full transparency: I used Generative AI to help create the HTML, implement CSS, and develop many of the JavaScript functions in this web page. Generative AI supported development, though I designed the structure, wrote the logic, and ensured everything worked properly.</p>
                 <h4>Purpose</h4>
                 <p>At the start of this project, I defined success as creating a web page with an interactive map. The
-                    goal was for users to click on a census tract and instantly see a graph illustrating changes in
+                    goal was for users to click on a census tract and instantly see a graph illustrating demographic changes in
                     population and housing characteristics from 1970 to 2020.</p>
                 <h4>Project Scoping</h4>
                 <p>The first step of this project was to define the project scope and research tools that could help me
                     deploy this web page. There are <i>many</i> tools to build a webpage. Because this is my first
                     webpage, I chose to stick with simple tools such as GitHub pages to host the page, Leaflet to deploy
-                    the web map, and Firebase to host my data.</p>
+                    the web map, and Firebase to host my data. I chose Firebase because it was simple to implement, however, I quickly realized that it likely does not scale to <i>my</i> needs because each query requires many reads of the database which is expensive. This has become a note to update.</my></p>
                 <h4>Dataset Construction</h4>
                 <p>The second step of this project was to compile and organize the LTDB into a dataset that I could host
                     online then query. The LTDB is a census tract (neighborhood) harmonized dataset of decennial census
@@ -339,32 +338,41 @@
                     tracts. There are some risks here such as loss of data accuracy, however, I felt the tradeoff was
                     worth it because I could later link to more recent data and after the 2030 decennial census then be
                     more likely to crosswalk that data to 2020 census tract boundaries so there is a bit of
-                    future-proofing.</p>
+                    future-proofing. I used Python to reshape the data, add additional fields, perform checks on the data, and use the IPUMS-NHGIS Crosswalk Files to bring forward the data.</p>
                 <h4>Wireframe Web Page</h4>
+                <p>Once I was satisfied with the dataset that I wanted to implement, I decided to wireframe this web page. I chose to keep it simple in order to focus on the stories that the data tell. The initial front tab of the web page is simple, enough information to get started, the web map to query data, and the chart to display the fetched data. Additional information is kept on separate tabs to only be shown if someone chooses to look.</p>
                 <h4>Database Development</h4>
-                <h4>Deploy Web Map</h4>
+                <p>I chose Firebase because it was very simple to implement. Firebase links to a Google account, setting up a database (Firestore) was simple, and there was plenty of documentation to get going, including using Python which is the language that I have the most experience using. I quickly realized that hosting the web page on GitHub Pages limits Firebase, so I should eventually move away from static hosting and use a different database host. If I were to implement stylization of the census tracts using Firebase, it would be very expensive to fetch stylization information from.</p>
+                <h4>Deploy Leaflet Web Map and High Charts</h4>
+                <p>Once the Firebase database and web page were set up, I used a simple query to test fetching data using GEOIDs input. I then made sure that the High Charts API could build the expected graphs from the fetched data. This was to ensure functionality prior to implementing the web map to query data because that is an added layer of complexity. Once I was satisfied with the ability to query data by GEOID and build a graph, I implemented Leaflet to allow the user to select census tracts to query data. Very people know their census tract GEOID whereas almost anyone can point-and-click on a web map to identify a place of interest.</p>
                 <h4>Challenges and Lessons Learned</h4>
+                <p>Web browsers can only handle so many polygons on an interactive map. In order to expand the polygons available to be nationwide, I need to implement a national tile set then use that data. I am looking into Map Box and Esri solutions for this. Once implemented, I'll need to update the functionality to query data by census tract GEOID.</p>
+                <p>GitHub Pages is good for static hosting but may not be suitable for this application because there is no backend.</p>
+                <p></p>
                 <h4>Future Development</h4>
+                <p>
+                    In addition to the challenges listed above, here are some ideas that I have for future development:
+                    <ul>
+                        <li>Allow map users to stylize the census tract based on additional information. The purpose of this is to guide map users in their selection. For example, stylizing the census tracts by areas of damage claims from FEMA's Individual Assistance (IA) program can help map users identify areas hard-hit by natural disasters.</li>
+                        <li>Move the whole website to a true website host. This includes the web pages themselves, the data, and potential future map tiles.</li>
+                    </ul>
+                </p>
             </div>
-
             <div class="tab-pane fade" id="inspiration" role="tabpanel">
                 <h3>Inspiration</h3>
-                <p>The inspiration for the Longitudinal Tract Web Map comes from the Neighborhood Change Web Map (NCWM),
-                    a project that I managed by a Social Science Analyst at HUD. You can read more about the NCWM <a
-                        href="https://web.archive.org/web/20250131225035/https://www.huduser.gov/portal/pdredge/pdr-edge-spotlight-article-061124.html"
-                        target="_blank">here</a>. The purpose of the NCWM was to reimagine the many large,
-                    administrative datasets available into a point-and-click tool to generate insights and analysis far
-                    faster than the previous methods of compiling and analyzing the data.</p>
-                <p>I am the subject matter expert for the HUD-USPS Address Data. Since 2005, HUD has collected snapshots
-                    of. These data are <a
-                        href="https://scholar.google.com/scholar?hl=en&as_sdt=0%2C9&authuser=1&q=usps+vacancy+data&btnG="
-                        target="_blank">widely used in housing vacancy research</a>, however, they're underutilized in
-                    other research such as measuring housing supply <i>growth</i>. While many researchers used this
-                    data, they had to download and compile the data to generate insights. This was out of reach for many
-                    practitioners and other stakeholders who either did not have bandwidth or technical capacity to do
-                    so. To overcome this challenge, I envisioned a point-and-click webmap that queries longitudinal
-                    administrative data then displays it in a concise way to uncover trends.</p>
-                <p>To</p>
+                <p>The inspiration for the Longitudinal Tract Web Map (LTWM) is the <a href="https://www.huduser.gov/apps/public/usps/mappingtool" target="_blank">Neighborhood Change Web Map </a> (NCWM),
+                    a project that I manage as a Social Science Analyst at HUD. The purpose of the NCWM is to reimagine the many large,
+                    administrative datasets available into a point-and-click tool to enhance the accessibility of the underlying datasets, and generate insights and analysis far
+                    faster than the previous methods of compiling and analyzing the data. I regularly meet with researchers, practitioners, and others on how to incorporate the NCWM into their products and workflows.</p>
+                    <p>You can read more about the NCWM here:</p>
+                    <ul>
+                        <li><a href="https://archives.huduser.gov/portal/pdredge/pdr-edge-spotlight-article-061124.html" target="_blank">Launching the Neighborhood Change Web Map</a></li>
+                        <li><a href="https://www.huduser.gov/portal/pdredge/pdr-edge-spotlight-article-030625.html" target="_blank">Introducing Overlays to Enhance the Neighborhood Change Web Map</a></li>
+                    </ul>
+                    <p>I am the subject matter expert for the <a href="https://www.huduser.gov/portal/datasets/usps.html" target="_blank"> HUD-USPS Address Data</a> and its derivitative data products including the <a href="https://www.huduser.gov/apps/public/uspscrosswalk/login" target="_blank">HUD-USPS ZIP Code Crosswalk Files</a> and the <a href="https://www.huduser.gov/portal/datasets/census_tract_crosswalk.html" target="_blank">HUD-USPS Census Tract Crosswalk Files</a>. The HUD-USPS ZIP Crosswalk Files are used to reaggregate data from and to ZIP codes, especially in public health research.</p> 
+                    <p>Since 2005, HUD has collected national snapshots
+                    of address counts. HUD began publishing these in the lead up to the 2008 Great Recession and have been <a href="https://scholar.google.com/scholar?hl=en&as_sdt=0%2C9&authuser=1&q=usps+vacancy+data&btnG=" target="_blank">widely used in housing vacancy research</a>. I have published research on <a href="https://www.huduser.gov/portal/periodicals/cityscpe/vol24num2/article4.html" target="_blank">improving vacancy rate estimation in rural areas</a> and the <a href="https://link.springer.com/article/10.1007/s11113-024-09904-4" target="_blank">impact of highly-destructive wildfires</a>. These data remain understudied and there is still more that they can be used to understand such as small-area housing <i>growth</i>, and development into areas of high natural hazard risk. I hope to keep expanding the use of these data for researchers and practitioners.</p>
+                
             </div>
 
             <div class="tab-pane fade" id="literature" role="tabpanel">
